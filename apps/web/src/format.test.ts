@@ -5,6 +5,8 @@ import {
   formatEvidenceValue,
   formatLatencyMs,
   formatPercent,
+  qvacConfidenceToken,
+  qvacExplanation,
 } from "./format.js";
 
 describe("operator display formatting", () => {
@@ -19,5 +21,14 @@ describe("operator display formatting", () => {
     expect(formatEvidenceValue("dominantQname", "heartbeat-probe.edge-service.test")).toBe(
       "heartbeat-probe.edge-service.test",
     );
+  });
+
+  it("does not treat a lone severity token as an explanation", () => {
+    expect(qvacExplanation("high")).toBeUndefined();
+    expect(qvacExplanation("The inter-arrival CV is 0.149 in a 4-query window.")).toBe(
+      "The inter-arrival CV is 0.149 in a 4-query window.",
+    );
+    expect(qvacConfidenceToken("high")).toBe("high");
+    expect(qvacConfidenceToken("periodic queries", "medium")).toBe("medium");
   });
 });

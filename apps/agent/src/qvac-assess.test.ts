@@ -86,6 +86,7 @@ describe("assessSignals", () => {
     ]);
     expect(buildQvacPrompt(signal)).toContain('"score":0.68');
     expect(buildQvacPrompt(signal)).toContain("nxdomainRatio");
+    expect(buildQvacPrompt(signal)).toContain("complete sentences");
     expect(buildQvacPrompt(signal)).not.toContain("whois");
   });
 

@@ -132,6 +132,7 @@ export function parseQvacRow(row: Record<string, unknown>): QvacResult {
       status: status === "ok" ? "invalid" : status,
     });
   }
+  const confidence = String(row.confidence ?? "").trim();
   return qvacResultSchema.parse({
     signalId: row.signal_id,
     status: "ok",
@@ -139,6 +140,9 @@ export function parseQvacRow(row: Record<string, unknown>): QvacResult {
       assessment,
       rationale: row.rationale,
       usedEvidence: row.used_evidence,
+      ...(confidence === "high" || confidence === "medium" || confidence === "low"
+        ? { confidence }
+        : {}),
     },
   });
 }

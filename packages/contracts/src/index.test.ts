@@ -188,6 +188,12 @@ describe("qvacAssessmentSchema", () => {
       usedEvidence: ["nxdomainRatio"],
     };
     expect(qvacAssessmentSchema.parse(assessment)).toEqual(assessment);
+    expect(
+      qvacAssessmentSchema.parse({
+        ...assessment,
+        confidence: "high",
+      }).confidence,
+    ).toBe("high");
   });
 
   it("rejects empty usedEvidence or extra fields", () => {

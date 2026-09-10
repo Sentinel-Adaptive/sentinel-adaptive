@@ -216,11 +216,14 @@ export const qvacResultStatuses = [
   "unavailable",
 ] as const;
 
+export const qvacConfidenceTokens = ["high", "medium", "low"] as const;
+
 export const qvacAssessmentSchema = z
   .object({
     assessment: z.enum(qvacAssessments),
     rationale: z.string().min(1).max(500),
     usedEvidence: z.array(z.string().min(1)).min(1),
+    confidence: z.enum(qvacConfidenceTokens).optional(),
   })
   .strict();
 

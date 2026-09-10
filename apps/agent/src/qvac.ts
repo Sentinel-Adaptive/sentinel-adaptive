@@ -126,7 +126,11 @@ function assessmentJsonSchema(
         type: "string",
         enum: ["consistent", "uncertain", "insufficient_evidence"],
       },
-      rationale: { type: "string", minLength: 1 },
+      rationale: { type: "string", minLength: 24 },
+      confidence: {
+        type: "string",
+        enum: ["high", "medium", "low"],
+      },
       usedEvidence: {
         type: "array",
         minItems: 1,

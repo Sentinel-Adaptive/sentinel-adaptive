@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS sentinel.qvac_results
     status LowCardinality(String),
     assessment LowCardinality(String),
     rationale String,
+    confidence LowCardinality(String),
     used_evidence Array(String),
     updated_at DateTime64(3, 'UTC')
 )

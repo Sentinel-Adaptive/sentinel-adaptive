@@ -90,11 +90,16 @@ ORDER BY (incident_id, signal_id)`,
     status LowCardinality(String),
     assessment LowCardinality(String),
     rationale String,
+    confidence LowCardinality(String),
     used_evidence Array(String),
     updated_at DateTime64(3, 'UTC')
 )
 ENGINE = ReplacingMergeTree(updated_at)
 ORDER BY signal_id`,
+];
+
+const telemetrySchemaAlters = [
+  "ALTER TABLE qvac_results ADD COLUMN IF NOT EXISTS confidence String",
 ];
 
 export interface ClickHouseSettings {
@@ -153,6 +158,9 @@ export async function ensureTelemetrySchema(
   overrides: ClickHouseSettings = {},
 ): Promise<void> {
   for (const statement of telemetrySchemaStatements) {
+    await clickHouseQuery(statement, undefined, overrides);
+  }
+  for (const statement of telemetrySchemaAlters) {
     await clickHouseQuery(statement, undefined, overrides);
   }
 }
@@ -307,6 +315,7 @@ function qvacRow(result: QvacResult): Record<string, unknown> {
     status: result.status,
     assessment: result.assessment?.assessment ?? "",
     rationale: result.assessment?.rationale ?? "",
+    confidence: result.assessment?.confidence ?? "",
     used_evidence: result.assessment?.usedEvidence ?? [],
     updated_at: toClickHouseDateTime(new Date().toISOString()),
   };

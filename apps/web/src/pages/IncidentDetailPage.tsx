@@ -9,6 +9,8 @@ import {
   formatLatencyMs,
   formatPercent,
   formatTime,
+  qvacConfidenceToken,
+  qvacExplanation,
   severityClass,
 } from "../format.js";
 import { EmptyState, ErrorBanner, PageHeader, Panel } from "../ui.js";
@@ -103,35 +105,47 @@ function IncidentBody({
                   <th className="border-b border-line py-2 font-medium">Signal</th>
                   <th className="border-b border-line py-2 font-medium">Inference</th>
                   <th className="border-b border-line py-2 font-medium">Classification</th>
+                  <th className="border-b border-line py-2 font-medium">Confidence</th>
                   <th className="border-b border-line py-2 font-medium">Uncertainty</th>
                   <th className="border-b border-line py-2 font-medium">Supporting evidence</th>
                   <th className="border-b border-line py-2 font-medium">Explanation</th>
                 </tr>
               </thead>
               <tbody>
-                {qvac.map((result) => (
-                  <tr key={result.signalId}>
-                    <td className="border-b border-line py-2 font-mono text-xs">{result.signalId}</td>
-                    <td className="border-b border-line py-2">{formatEnumLabel(result.status)}</td>
-                    <td className="border-b border-line py-2">
-                      {result.assessment
-                        ? formatEnumLabel(result.assessment.assessment)
-                        : qvacSkipReason(result.status)}
-                    </td>
-                    <td className="border-b border-line py-2">
-                      {qvacUncertainty(result.assessment?.assessment, result.status)}
-                    </td>
-                    <td className="border-b border-line py-2">
-                      {result.assessment?.usedEvidence.join(", ") ?? "—"}
-                    </td>
-                    <td className="border-b border-line py-2 text-muted">
-                      {result.assessment?.rationale ??
-                        (result.status === "skipped"
-                          ? "Deterministic score is outside the ambiguous band, so the local model was not invoked."
-                          : "—")}
-                    </td>
-                  </tr>
-                ))}
+                {qvac.map((result) => {
+                  const signal = signals.find((item) => item.signalId === result.signalId);
+                  const explanation = qvacExplanation(result.assessment?.rationale);
+                  const modelToken = qvacConfidenceToken(
+                    result.assessment?.rationale,
+                    result.assessment?.confidence,
+                  );
+                  return (
+                    <tr key={result.signalId}>
+                      <td className="border-b border-line py-2 font-mono text-xs">{result.signalId}</td>
+                      <td className="border-b border-line py-2">{formatEnumLabel(result.status)}</td>
+                      <td className="border-b border-line py-2">
+                        {result.assessment
+                          ? formatEnumLabel(result.assessment.assessment)
+                          : qvacSkipReason(result.status)}
+                      </td>
+                      <td className="border-b border-line py-2">
+                        {formatQvacConfidence(signal?.score, modelToken, result.status)}
+                      </td>
+                      <td className="border-b border-line py-2">
+                        {qvacUncertainty(result.assessment?.assessment, result.status)}
+                      </td>
+                      <td className="border-b border-line py-2">
+                        {result.assessment?.usedEvidence.join(", ") ?? "—"}
+                      </td>
+                      <td className="border-b border-line py-2 text-muted">
+                        {explanation ??
+                          (result.status === "skipped"
+                            ? "Deterministic score is outside the ambiguous band, so the local model was not invoked."
+                            : "No sentence-length rationale was returned.")}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -218,6 +232,24 @@ function formatWazuhIndexed(state: "yes" | "no" | "unknown"): string {
     return "Not found";
   }
   return "Lookup failed";
+}
+
+function formatQvacConfidence(
+  score: number | undefined,
+  modelToken: string | undefined,
+  status: string,
+): string {
+  if (status === "skipped") {
+    return score === undefined ? "—" : `${formatPercent(score)} (deterministic)`;
+  }
+  const parts: string[] = [];
+  if (score !== undefined) {
+    parts.push(formatPercent(score));
+  }
+  if (modelToken) {
+    parts.push(`model token ${formatEnumLabel(modelToken)}`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : "—";
 }
 
 function qvacSkipReason(status: string): string {

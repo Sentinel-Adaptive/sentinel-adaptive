@@ -29,6 +29,34 @@ export function formatTime(iso: string): string {
   return `${iso.replace("T", " ").replace("Z", "")} UTC`;
 }
 
+const loneSeverityToken = /^(high|medium|low)$/i;
+
+export function isLoneSeverityToken(value: string): boolean {
+  return loneSeverityToken.test(value.trim());
+}
+
+export function qvacExplanation(rationale: string | undefined): string | undefined {
+  const text = rationale?.trim();
+  if (!text || isLoneSeverityToken(text)) {
+    return undefined;
+  }
+  return text;
+}
+
+export function qvacConfidenceToken(
+  rationale: string | undefined,
+  confidence?: string,
+): string | undefined {
+  if (confidence && isLoneSeverityToken(confidence)) {
+    return confidence.toLowerCase();
+  }
+  const text = rationale?.trim();
+  if (text && isLoneSeverityToken(text)) {
+    return text.toLowerCase();
+  }
+  return undefined;
+}
+
 export function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }

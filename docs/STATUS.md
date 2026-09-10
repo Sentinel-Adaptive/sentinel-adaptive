@@ -25,15 +25,15 @@ None.
 
 ## Last verified command
 
-`npm run smoke:ui`
+`GET /api/overview` and `GET /api/incidents/INC-1AC334C9BD19C07D` through the restarted operator API and Vite proxy
 
 ## Last verified result
 
-`npm run demo:seed` plus `npm run smoke:ui` populated three-site QoE windows from ClickHouse, kept high-confidence `INC-1B41EDF624D62463` on `PTY-BANK-01` as a QVAC skip, and ran live local QVAC on weak-beacon `INC-1AC334C9BD19C07D` (`PTY-HEALTH-01`, score ≈ 0.72). Wazuh emit is now derived from the event log and indexer, not only the current process memory. Overview QoE no longer disappears behind a ClickHouse `argMax` alias error.
+Ambiguous QVAC on `INC-1AC334C9BD19C07D` is assessed locally (`status: ok`, `cloudInference: false`). The 1B model had stuffed a lone `high` token into `rationale`; the schema now accepts optional `confidence` and requires a sentence-length `rationale`. The persisted result is `consistent` / `confidence: medium` with the model's own sentence in `rationale`. Incident Detail maps that token to Confidence and the sentence to Explanation. Overview QoE from ClickHouse is `PTY-BANK-01` 0.956, `PTY-HEALTH-01` 0.8827, `COL-GOV-01` 0.746.
 
 ## Next exact task
 
-Begin Stage 9 by proving the judged path still runs locally after model availability with outbound internet disabled.
+Stage 9 is not started. After this mapping fix is on `origin/main`, prove the judged path still runs locally after model availability with outbound internet disabled.
 
 ## Known risks
 
