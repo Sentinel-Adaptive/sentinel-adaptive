@@ -20,7 +20,9 @@
     "compliance": "node scripts/verify-compliance.mjs",
     "health": "node scripts/healthcheck.mjs",
     "infra:config": "docker compose -f infra/docker-compose.yml config",
+    "infra:plugins": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-grafana-plugin.ps1",
     "infra:up:core": "docker compose -f infra/docker-compose.yml up -d --wait kafka clickhouse",
+    "infra:up:observability": "docker compose -f infra/docker-compose.yml up -d --wait kafka clickhouse grafana",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "smoke:infra": "node scripts/smoke-infra.mjs"
   },

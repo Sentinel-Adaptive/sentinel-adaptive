@@ -60,6 +60,26 @@ async function clickHouseQuery(query, body) {
   return responseBody;
 }
 
+async function grafanaRequest(pathname) {
+  const baseUrl = process.env.GRAFANA_URL ?? "http://localhost:3000";
+  const user = process.env.GRAFANA_ADMIN_USER ?? "admin";
+  const password = process.env.GRAFANA_ADMIN_PASSWORD ?? "sentinel-local";
+  const response = await fetch(new URL(pathname, baseUrl), {
+    headers: {
+      authorization: `Basic ${Buffer.from(`${user}:${password}`).toString("base64")}`,
+    },
+  });
+  const body = await response.text();
+
+  if (!response.ok) {
+    throw new Error(
+      `Grafana request '${pathname}' failed (${response.status}): ${body}`,
+    );
+  }
+
+  return body ? JSON.parse(body) : {};
+}
+
 function smokeKafka(marker) {
   const topic = process.env.KAFKA_DNS_TOPIC ?? "dns.telemetry";
   const kafkaBin = "/opt/kafka/bin";
@@ -141,6 +161,28 @@ async function smokeClickHouse(marker) {
   }
 }
 
+async function smokeGrafana() {
+  const health = await grafanaRequest("/api/health");
+  if (health.database !== "ok") {
+    throw new Error(`Grafana database health is '${health.database}'.`);
+  }
+
+  await grafanaRequest("/api/datasources/uid/sentinel-clickhouse/health");
+  const dashboard = await grafanaRequest(
+    "/api/dashboards/uid/sentinel-infra-smoke",
+  );
+  const panels = dashboard.dashboard?.panels ?? [];
+  const hasClickHousePanel = panels.some((panel) =>
+    panel.targets?.some((target) =>
+      target.rawSql?.includes("sentinel.infra_smoke"),
+    ),
+  );
+
+  if (!hasClickHousePanel) {
+    throw new Error("Grafana smoke dashboard has no ClickHouse-backed panel.");
+  }
+}
+
 const marker = `sentinel-stage1-${randomUUID()}`;
 
 try {
@@ -149,6 +191,9 @@ try {
 
   await smokeClickHouse(marker);
   console.log("ClickHouse  PASS");
+
+  await smokeGrafana();
+  console.log("Grafana     PASS");
 } catch (error) {
   console.error("Infrastructure smoke test: FAIL");
   console.error(error instanceof Error ? error.message : error);

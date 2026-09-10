@@ -32,3 +32,4 @@ captures/
 *.pcapng
 
 infra/wazuh/certs/generated/
+infra/grafana/plugins/
