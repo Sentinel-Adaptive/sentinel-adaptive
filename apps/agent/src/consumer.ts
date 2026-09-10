@@ -1,11 +1,12 @@
 import { Kafka, logLevel, type Consumer } from "kafkajs";
 
-import { dnsEventSchema, type Signal } from "@sentinel-adaptive/contracts";
-import { DetectionEngine } from "@sentinel-adaptive/detection";
+import { dnsEventSchema, type Incident, type Signal } from "@sentinel-adaptive/contracts";
+import { DetectionEngine, IncidentCorrelator } from "@sentinel-adaptive/detection";
 
 import {
   ensureTelemetrySchema,
   persistBucket,
+  persistIncidents,
   type ClickHouseSettings,
 } from "./clickhouse.js";
 import { assessAmbiguousSignals } from "./qvac.js";
@@ -24,6 +25,7 @@ export interface ConsumeStreamOptions {
   readonly assessQvac?: boolean;
   readonly clickhouse?: ClickHouseSettings;
   readonly onSignals?: (signals: readonly Signal[]) => void;
+  readonly onIncidents?: (incidents: readonly Incident[]) => void;
 }
 
 export async function consumeDnsStream(
@@ -61,6 +63,7 @@ export async function consumeDnsStream(
     },
   });
   const seen = new Set<string>();
+  const correlator = new IncidentCorrelator();
 
   await consumer.connect();
   await consumer.subscribe({
@@ -88,13 +91,27 @@ export async function consumeDnsStream(
       });
       if (signals.length > 0) {
         options.onSignals?.(signals);
-        if (emitWazuh) {
-          void emitWazuhIncidents(signals).catch((error: unknown) => {
-            console.error(
-              "Wazuh emit failed:",
-              error instanceof Error ? error.message : error,
+        const incidents = correlator.ingest(signals);
+        if (incidents.length > 0) {
+          options.onIncidents?.(incidents);
+          if (persist) {
+            void persistIncidents(incidents, options.clickhouse).catch(
+              (error: unknown) => {
+                console.error(
+                  "ClickHouse incident persist failed:",
+                  error instanceof Error ? error.message : error,
+                );
+              },
             );
-          });
+          }
+          if (emitWazuh) {
+            void emitWazuhIncidents(incidents).catch((error: unknown) => {
+              console.error(
+                "Wazuh emit failed:",
+                error instanceof Error ? error.message : error,
+              );
+            });
+          }
         }
         if (assessQvac) {
           void assessAmbiguousSignals(signals)

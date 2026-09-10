@@ -1,4 +1,9 @@
-import type { DnsEvent, SiteQoe, SiteWindowMetrics } from "@sentinel-adaptive/contracts";
+import type {
+  DnsEvent,
+  Incident,
+  SiteQoe,
+  SiteWindowMetrics,
+} from "@sentinel-adaptive/contracts";
 import { qoeForWindows } from "@sentinel-adaptive/detection";
 
 export const defaultClickHouseUrl = "http://localhost:8123";
@@ -47,6 +52,23 @@ ORDER BY (site_id, timestamp)`,
 )
 ENGINE = MergeTree
 ORDER BY (site_id, bucket_start)`,
+  `CREATE TABLE IF NOT EXISTS incidents
+(
+    incident_id String,
+    window_start DateTime64(3, 'UTC'),
+    timestamp DateTime64(3, 'UTC'),
+    site_id LowCardinality(String),
+    classification LowCardinality(String),
+    severity LowCardinality(String),
+    confidence Float64,
+    signal_count UInt32,
+    signal_ids Array(String),
+    types Array(String),
+    affected_entities Array(String),
+    summary String
+)
+ENGINE = ReplacingMergeTree(timestamp)
+ORDER BY (site_id, incident_id)`,
 ];
 
 export interface ClickHouseSettings {
@@ -207,4 +229,28 @@ export async function persistTelemetry(
 ): Promise<void> {
   await persistDnsEvents(events, overrides);
   await persistSiteWindows(windows, overrides);
+}
+
+function incidentRow(incident: Incident): Record<string, unknown> {
+  return {
+    incident_id: incident.incidentId,
+    window_start: toClickHouseDateTime(incident.windowStart),
+    timestamp: toClickHouseDateTime(incident.timestamp),
+    site_id: incident.siteId,
+    classification: incident.classification,
+    severity: incident.severity,
+    confidence: incident.confidence,
+    signal_count: incident.signalCount,
+    signal_ids: incident.signalIds,
+    types: incident.types,
+    affected_entities: incident.affectedEntities,
+    summary: incident.summary,
+  };
+}
+
+export async function persistIncidents(
+  incidents: readonly Incident[],
+  overrides: ClickHouseSettings = {},
+): Promise<void> {
+  await insertRows("incidents", incidents.map(incidentRow), overrides);
 }

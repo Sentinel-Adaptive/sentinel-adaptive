@@ -9,7 +9,8 @@
     "smoke": "tsx --disable-warning=TimeoutNegativeWarning src/smoke.ts",
     "smoke:qoe": "tsx --disable-warning=TimeoutNegativeWarning src/qoe-smoke.ts",
     "smoke:wazuh": "tsx --disable-warning=TimeoutNegativeWarning src/wazuh-smoke.ts",
-    "smoke:qvac": "tsx --disable-warning=TimeoutNegativeWarning src/qvac-smoke.ts"
+    "smoke:qvac": "tsx --disable-warning=TimeoutNegativeWarning src/qvac-smoke.ts",
+    "smoke:correlation": "tsx --disable-warning=TimeoutNegativeWarning src/correlation-smoke.ts"
   },
   "dependencies": {
     "@qvac/inference": "0.19.0",

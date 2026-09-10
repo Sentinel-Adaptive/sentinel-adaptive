@@ -4,6 +4,7 @@ export {
   defaultClickHouseUrl,
   ensureTelemetrySchema,
   persistBucket,
+  persistIncidents,
   persistTelemetry,
   toClickHouseDateTime,
   type ClickHouseSettings,
@@ -23,6 +24,5 @@ export {
 export {
   defaultWazuhEventLog,
   emitWazuhIncidents,
-  incidentIdForSignal,
   toWazuhIncidentEvent,
 } from "./wazuh.js";

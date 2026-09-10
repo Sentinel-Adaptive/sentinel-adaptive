@@ -1,4 +1,4 @@
-import { processEvents } from "@sentinel-adaptive/detection";
+import { correlateSignals, processEvents } from "@sentinel-adaptive/detection";
 import {
   defaultKafkaBroker,
   defaultKafkaTopic,
@@ -38,7 +38,7 @@ try {
     throw new Error("Stage 3 did not emit an evidenced DGA signal.");
   }
 
-  const [event] = await emitWazuhIncidents([signal]);
+  const [event] = await emitWazuhIncidents(correlateSignals([signal]));
   if (!event) {
     throw new Error("Wazuh emitter produced no incident JSON.");
   }

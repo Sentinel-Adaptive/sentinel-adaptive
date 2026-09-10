@@ -6,9 +6,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import {
   wazuhIncidentEventSchema,
-  type Signal,
-  type SignalType,
-  type WazuhClassification,
+  type Incident,
   type WazuhIncidentEvent,
 } from "@sentinel-adaptive/contracts";
 
@@ -21,43 +19,30 @@ const root = path.resolve(
 const composeFile = path.join(root, "infra", "docker-compose.yml");
 const defaultEventLog = path.join(root, "infra", "wazuh", "runtime", "events.json");
 
-const classifications: Record<SignalType, WazuhClassification> = {
-  beaconing: "possible_c2_beaconing",
-  tunneling: "possible_dns_tunneling",
-  dga: "possible_dga",
-  typosquatting: "possible_typosquatting",
-  baseline_deviation: "baseline_deviation",
-};
-
 export function defaultWazuhEventLog(): string {
   return process.env.WAZUH_EVENT_LOG ?? defaultEventLog;
 }
 
-export function incidentIdForSignal(signalId: string): string {
-  return `INC-${signalId.replaceAll("-", "").slice(0, 16).toUpperCase()}`;
-}
-
-export function toWazuhIncidentEvent(signal: Signal): WazuhIncidentEvent {
-  const reason = signal.evidence[0]?.reason ?? "deterministic detection evidence";
+export function toWazuhIncidentEvent(incident: Incident): WazuhIncidentEvent {
   return wazuhIncidentEventSchema.parse({
     source: "sentinel-adaptive",
     event_type: "dns_security_incident",
-    incident_id: incidentIdForSignal(signal.signalId),
-    site_id: signal.siteId,
-    classification: classifications[signal.type],
-    severity: signal.severityHint,
-    confidence: signal.score,
-    signal_count: 1,
-    summary: `Uncorrelated ${signal.type} signal on ${signal.siteId}: ${reason}`,
-    signal_id: signal.signalId,
+    incident_id: incident.incidentId,
+    site_id: incident.siteId,
+    classification: incident.classification,
+    severity: incident.severity,
+    confidence: incident.confidence,
+    signal_count: incident.signalCount,
+    summary: incident.summary,
+    signal_id: incident.signalIds[0],
   });
 }
 
 export async function emitWazuhIncidents(
-  signals: readonly Signal[],
+  incidents: readonly Incident[],
   eventLog = defaultWazuhEventLog(),
 ): Promise<readonly WazuhIncidentEvent[]> {
-  const events = signals.map(toWazuhIncidentEvent);
+  const events = incidents.map(toWazuhIncidentEvent);
   if (events.length === 0) {
     return [];
   }

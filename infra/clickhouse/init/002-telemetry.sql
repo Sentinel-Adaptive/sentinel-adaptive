@@ -41,3 +41,21 @@ CREATE TABLE IF NOT EXISTS sentinel.site_metrics
 )
 ENGINE = MergeTree
 ORDER BY (site_id, bucket_start);
+
+CREATE TABLE IF NOT EXISTS sentinel.incidents
+(
+    incident_id String,
+    window_start DateTime64(3, 'UTC'),
+    timestamp DateTime64(3, 'UTC'),
+    site_id LowCardinality(String),
+    classification LowCardinality(String),
+    severity LowCardinality(String),
+    confidence Float64,
+    signal_count UInt32,
+    signal_ids Array(String),
+    types Array(String),
+    affected_entities Array(String),
+    summary String
+)
+ENGINE = ReplacingMergeTree(timestamp)
+ORDER BY (site_id, incident_id);

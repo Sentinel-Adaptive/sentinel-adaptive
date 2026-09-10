@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { generateScenario } from "@sentinel-adaptive/generator";
-import { collectSiteWindows } from "@sentinel-adaptive/detection";
+import { collectSiteWindows, correlateSignals, processEvents } from "@sentinel-adaptive/detection";
 
 import {
+  persistIncidents,
   persistTelemetry,
   toClickHouseDateTime,
 } from "./clickhouse.js";
@@ -68,5 +69,34 @@ describe("ClickHouse persistence", () => {
     expect(requests.some((request) => request.body?.includes("PTY-BANK-01"))).toBe(
       true,
     );
+  });
+
+  it("inserts correlated incidents", async () => {
+    const requests: Array<{ query: string; body?: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        requests.push({
+          query: url.searchParams.get("query") ?? "",
+          body: typeof init?.body === "string" ? init.body : undefined,
+        });
+        return new Response("", { status: 200 });
+      }),
+    );
+
+    const incidents = correlateSignals(
+      processEvents(generateScenario({ scenario: "dga", count: 20 })).filter(
+        (signal) => signal.type === "dga",
+      ),
+    );
+    await persistIncidents(incidents, { url: "http://clickhouse.test:8123" });
+    expect(
+      requests.some(
+        (request) =>
+          request.query.startsWith("INSERT INTO incidents") &&
+          (request.body?.includes(incidents[0]?.incidentId ?? "") ?? false),
+      ),
+    ).toBe(true);
   });
 });
