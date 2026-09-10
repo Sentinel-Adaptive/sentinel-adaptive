@@ -40,7 +40,7 @@ flowchart LR
 
 ## Inference boundary
 
-All judged inference must execute locally through `@qvac/sdk` and `@qvac/inference` 0.19.0 using `LLAMA_3_2_1B_INST_Q4_0`. QVAC receives structured derived evidence only, and only for scores in `[0.60, 0.75)`. It cannot invent or fetch reputation, WHOIS, ownership, ASN, or malware-family data. The original deterministic signal is not mutated.
+All judged inference must execute locally through `@qvac/sdk` and `@qvac/inference` 0.19.0 using `LLAMA_3_2_1B_INST_Q4_0`. QVAC receives structured derived evidence only, and only for scores in `[0.60, 0.75)`. It cannot invent or fetch reputation, WHOIS, ownership, ASN, or malware-family data. The original deterministic signal is not mutated. The first catalog download may use a checksum-validated HTTPS `fallbackSrc`; once the GGUF exists under `~/.qvac/models/`, later loads use that file. `npm run smoke:offline` proves a live assessment still succeeds after outbound internet is disabled.
 
 ## Failure behavior
 

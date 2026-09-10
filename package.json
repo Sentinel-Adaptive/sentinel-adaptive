@@ -34,6 +34,7 @@
     "smoke:qoe": "npm run smoke:qoe -w @sentinel-adaptive/agent",
     "smoke:wazuh": "npm run smoke:wazuh -w @sentinel-adaptive/agent",
     "smoke:qvac": "npm run smoke:qvac -w @sentinel-adaptive/agent",
+    "smoke:offline": "node scripts/smoke-offline.mjs",
     "smoke:correlation": "npm run smoke:correlation -w @sentinel-adaptive/agent",
     "smoke:ui": "npm run smoke:ui -w @sentinel-adaptive/agent && npm run build -w @sentinel-adaptive/web && node scripts/smoke-web-routes.mjs",
     "agent:consume": "npm run consume -w @sentinel-adaptive/agent",

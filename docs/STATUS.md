@@ -33,7 +33,7 @@ Ambiguous QVAC on `INC-1AC334C9BD19C07D` is assessed locally (`status: ok`, `clo
 
 ## Next exact task
 
-Publish the Stage 9 plan, prefer the cached local GGUF after first availability, and add `npm run smoke:offline` that disables outbound internet for Node/Bare and re-runs live local QVAC.
+Run `npm run smoke:offline` from an Administrator PowerShell so Windows Firewall can disable outbound internet for Node and the QVAC Bare worker, then close Stage 9 if the live local assessment succeeds.
 
 ## Known risks
 

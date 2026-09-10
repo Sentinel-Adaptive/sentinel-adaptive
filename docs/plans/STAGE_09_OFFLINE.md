@@ -47,9 +47,9 @@ Do not add extra microservices, a new UI, or Stage 10 submission assets.
 
 ## Exact implementation tasks
 
-- [ ] Publish this persistent stage plan
-- [ ] Resolve cached `LLAMA_3_2_1B_INST_Q4_0` GGUF and use it as `fallbackSrc` when present
-- [ ] Add `npm run smoke:offline` that isolates outbound internet and runs live local QVAC
+- [x] Publish this persistent stage plan
+- [x] Resolve cached `LLAMA_3_2_1B_INST_Q4_0` GGUF and use it as `fallbackSrc` when present
+- [x] Add `npm run smoke:offline` that isolates outbound internet and runs live local QVAC
 - [ ] Keep typecheck, lint, unit tests, compliance, and health passing
 - [ ] Update STATUS/ARCHITECTURE/COMPLIANCE/README; commit and push; close the stage
 
@@ -108,4 +108,4 @@ npm run health
 
 ## Unresolved items
 
-None yet.
+`npm run smoke:offline` is implemented and fail-closed without Administrator rights. This Cursor shell cannot apply Windows Firewall rules. The live disconnected QVAC proof still has to be run from an elevated terminal.

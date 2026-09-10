@@ -40,8 +40,8 @@ Run:
 npm run compliance
 ```
 
-Stage 0 checks executable configuration and package manifests for prohibited cloud-AI dependencies, credentials, and inference endpoints. Stage 6 requires `@qvac/sdk` and `@qvac/inference` to be pinned exactly to `0.19.0`. Stage 9 will add an offline local inference proof.
+Stage 0 checks executable configuration and package manifests for prohibited cloud-AI dependencies, credentials, and inference endpoints. Stage 6 requires `@qvac/sdk` and `@qvac/inference` to be pinned exactly to `0.19.0`. Stage 9 adds `npm run smoke:offline` to prove local inference after the GGUF is cached and outbound internet is disabled.
 
 ## Current status
 
-`npm run compliance` requires `@qvac/sdk` and `@qvac/inference` 0.19.0. Judged inference loads `LLAMA_3_2_1B_INST_Q4_0` in-process. Invalid or unavailable QVAC output does not stop Kafka consumption. DHT/provider APIs remain forbidden. An offline-disconnected proof remains Stage 9.
+`npm run compliance` requires `@qvac/sdk` and `@qvac/inference` 0.19.0. Judged inference loads `LLAMA_3_2_1B_INST_Q4_0` in-process. Invalid or unavailable QVAC output does not stop Kafka consumption. DHT/provider APIs remain forbidden. After the catalog GGUF is on disk, `fallbackSrc` is that local file. `npm run smoke:offline` disables outbound internet for Node and the QVAC Bare worker, then re-runs a live local assessment.

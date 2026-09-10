@@ -1,8 +1,11 @@
 import type { QvacResult, Signal } from "@sentinel-adaptive/contracts";
 
 import { assessSignals, type QvacRuntime } from "./qvac-assess.js";
-
-const permittedModel = "LLAMA_3_2_1B_INST_Q4_0";
+import {
+  permittedQvacModelId,
+  qvacOfflineRequested,
+  resolveQvacFallbackSrc,
+} from "./qvac-source.js";
 
 let loadedModelId: string | undefined;
 let loadPromise: Promise<string> | undefined;
@@ -12,7 +15,7 @@ export function qvacLocalOnly(): boolean {
 }
 
 export function permittedQvacModel(): string {
-  return process.env.QVAC_MODEL ?? permittedModel;
+  return process.env.QVAC_MODEL ?? permittedQvacModelId;
 }
 
 export interface SdkRuntimeOptions {
@@ -29,8 +32,8 @@ export function createSdkRuntime(
           "QVAC_LOCAL_ONLY must be true; cloud inference is forbidden.",
         );
       }
-      if (permittedQvacModel() !== permittedModel) {
-        throw new Error(`Only ${permittedModel} is permitted for judged inference.`);
+      if (permittedQvacModel() !== permittedQvacModelId) {
+        throw new Error(`Only ${permittedQvacModelId} is permitted for judged inference.`);
       }
       if (loadedModelId) {
         return loadedModelId;
@@ -99,7 +102,11 @@ export async function closeQvacRuntime(): Promise<void> {
 async function loadLocalModel(options: SdkRuntimeOptions): Promise<string> {
   const { loadModel, LLAMA_3_2_1B_INST_Q4_0 } = await import("@qvac/sdk");
   let lastLogged = -10;
-  const fallbackSrc = `https://huggingface.co/${LLAMA_3_2_1B_INST_Q4_0.registryPath.replace("/blob/", "/resolve/")}`;
+  const fallbackSrc = resolveQvacFallbackSrc({
+    registryPath: LLAMA_3_2_1B_INST_Q4_0.registryPath,
+    explicitPath: process.env.QVAC_MODEL_PATH,
+    requireLocal: qvacOfflineRequested(),
+  });
   return loadModel({
     modelSrc: LLAMA_3_2_1B_INST_Q4_0,
     fallbackSrc,

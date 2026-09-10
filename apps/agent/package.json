@@ -12,6 +12,7 @@
     "smoke:qoe": "tsx --disable-warning=TimeoutNegativeWarning src/qoe-smoke.ts",
     "smoke:wazuh": "tsx --disable-warning=TimeoutNegativeWarning src/wazuh-smoke.ts",
     "smoke:qvac": "tsx --disable-warning=TimeoutNegativeWarning src/qvac-smoke.ts",
+    "smoke:offline": "tsx --disable-warning=TimeoutNegativeWarning src/offline-smoke.ts",
     "smoke:correlation": "tsx --disable-warning=TimeoutNegativeWarning src/correlation-smoke.ts",
     "smoke:ui": "tsx --disable-warning=TimeoutNegativeWarning src/ui-smoke.ts"
   },

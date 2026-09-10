@@ -8,7 +8,7 @@ None. The initial public repository contained only a minimal project README befo
 
 Standard dependencies are declared in package manifests and Docker configuration.
 
-- `@qvac/sdk` and `@qvac/inference` 0.19.0 (Apache-2.0) were added on 2026-09-10 for local judged inference. The GGUF weights for `LLAMA_3_2_1B_INST_Q4_0` are downloaded by the SDK and are not committed.
+- `@qvac/sdk` and `@qvac/inference` 0.19.0 (Apache-2.0) were added on 2026-09-10 for local judged inference. The GGUF weights for `LLAMA_3_2_1B_INST_Q4_0` are downloaded by the SDK and are not committed. Stage 9 offline proof uses the already-cached file and Windows Firewall; it does not add a model file or a new inference provider.
 
 ## Templates and UI bases
 

@@ -55,6 +55,7 @@ npm run smoke:ovnicom
 npm run smoke:qoe
 npm run smoke:wazuh
 npm run smoke:qvac
+npm run smoke:offline
 npm run smoke:correlation
 npm run smoke:ui
 ```
