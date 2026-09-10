@@ -36,3 +36,8 @@ infra/wazuh/certs/tool/
 infra/wazuh/runtime/
 infra/grafana/plugins/
 infra/grafana/plugin-cache/
+
+data/ovnicom/
+LogsDNSQueries/
+**/queries.[0-9]*
+!tools/ovnicom-replay/fixtures/**
