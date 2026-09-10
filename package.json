@@ -28,12 +28,22 @@
     "infra:up:observability": "docker compose -f infra/docker-compose.yml up -d --wait kafka clickhouse grafana",
     "infra:up": "npm run infra:prepare && docker compose -f infra/docker-compose.yml up -d --wait",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
-    "smoke:infra": "node scripts/smoke-infra.mjs"
+    "smoke:infra": "node scripts/smoke-infra.mjs",
+    "smoke:generator": "npm run smoke -w @sentinel-adaptive/generator",
+    "demo:normal": "npm run generate -w @sentinel-adaptive/generator -- normal",
+    "demo:beacon": "npm run generate -w @sentinel-adaptive/generator -- beacon",
+    "demo:tunnel": "npm run generate -w @sentinel-adaptive/generator -- tunnel",
+    "demo:dga": "npm run generate -w @sentinel-adaptive/generator -- dga",
+    "demo:typosquat": "npm run generate -w @sentinel-adaptive/generator -- typosquat",
+    "demo:degrade-qoe": "npm run generate -w @sentinel-adaptive/generator -- degrade-qoe",
+    "demo:saturation": "npm run generate -w @sentinel-adaptive/generator -- saturation",
+    "demo:combined": "npm run generate -w @sentinel-adaptive/generator -- combined"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "22.20.2",
     "eslint": "10.10.0",
+    "tsx": "4.23.13",
     "typescript": "5.9.2",
     "typescript-eslint": "8.70.0",
     "vitest": "5.0.0"

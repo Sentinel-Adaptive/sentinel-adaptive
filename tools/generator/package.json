@@ -3,5 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts"
+  "exports": "./src/index.ts",
+  "scripts": {
+    "generate": "tsx --disable-warning=TimeoutNegativeWarning src/cli.ts",
+    "smoke": "tsx --disable-warning=TimeoutNegativeWarning src/smoke.ts"
+  },
+  "dependencies": {
+    "@sentinel-adaptive/contracts": "0.0.0",
+    "kafkajs": "2.2.4"
+  }
 }
