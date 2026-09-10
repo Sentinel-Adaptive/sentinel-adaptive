@@ -92,6 +92,8 @@ function createNormalEvent(
   };
 }
 
+const ambiguousBeaconOffsets = [0, 12_000, 24_000, 39_400] as const;
+
 function applyBehavior(
   event: DnsEvent,
   behavior: Exclude<ScenarioTag, "normal" | "background" | "combined">,
@@ -127,6 +129,24 @@ function applyBehavior(
         rcode: "NOERROR",
         saturation: 0.42,
       };
+    case "ambiguous-beacon": {
+      const cycle = sequence % 4;
+      const cycleStart = Math.floor(sequence / 4) * 60_000;
+      return {
+        ...event,
+        timestamp: new Date(
+          startTimeMs + cycleStart + ambiguousBeaconOffsets[cycle],
+        ).toISOString(),
+        clientIp: `${fictionalSites[event.siteId].clientPrefix.join(".")}.23`,
+        qname:
+          cycle === 3
+            ? "status.edge-service.test"
+            : "heartbeat-probe.edge-service.test",
+        qtype: "A",
+        rcode: "NOERROR",
+        saturation: 0.4,
+      };
+    }
     case "typosquat":
       return {
         ...event,

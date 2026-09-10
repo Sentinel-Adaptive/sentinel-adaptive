@@ -15,6 +15,7 @@ Each site has a deliberately different normal latency, NXDOMAIN rate, domain set
 ```bash
 npm run demo:normal
 npm run demo:beacon
+npm run demo:ambiguous-beacon
 npm run demo:tunnel
 npm run demo:dga
 npm run demo:typosquat

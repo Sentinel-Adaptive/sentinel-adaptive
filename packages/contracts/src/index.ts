@@ -12,6 +12,7 @@ export const scenarioTags = [
   "dga",
   "tunnel",
   "beacon",
+  "ambiguous-beacon",
   "typosquat",
   "degrade-qoe",
   "saturation",

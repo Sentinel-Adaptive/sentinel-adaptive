@@ -8,7 +8,11 @@ import { generateScenario } from "@sentinel-adaptive/generator";
 import { correlateSignals, processEvents } from "@sentinel-adaptive/detection";
 import { wazuhIncidentEventSchema } from "@sentinel-adaptive/contracts";
 
-import { emitWazuhIncidents, toWazuhIncidentEvent } from "./wazuh.js";
+import {
+  emitWazuhIncidents,
+  toWazuhIncidentEvent,
+  wazuhEmittedInLog,
+} from "./wazuh.js";
 
 describe("Wazuh incident mapping", () => {
   it("maps correlated incidents onto the monitored JSON contract", () => {
@@ -83,5 +87,7 @@ describe("Wazuh incident mapping", () => {
       wazuhIncidentEventSchema.parse(JSON.parse(lines[0] ?? "{}")).incident_id,
     ).toBe(first[0]?.incident_id);
     expect(lines[0]).toBe(lines[1]);
+    expect(wazuhEmittedInLog(first[0]!.incident_id, eventLog)).toBe(true);
+    expect(wazuhEmittedInLog("INC-0000000000000000", eventLog)).toBe(false);
   });
 });

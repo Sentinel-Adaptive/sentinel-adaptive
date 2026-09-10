@@ -1,99 +1,82 @@
-import { systemStatusSchema } from "@sentinel-adaptive/contracts";
-import {
-  IncidentCorrelator,
-  collectSiteWindows,
-  processEvents,
-} from "@sentinel-adaptive/detection";
-import { generateScenario } from "@sentinel-adaptive/generator";
+import { incidentDetailSchema, overviewResponseSchema } from "@sentinel-adaptive/contracts";
+import { isAmbiguousSignal } from "@sentinel-adaptive/detection";
 
 import { listenOperatorApi } from "./api.js";
-import {
-  ensureTelemetrySchema,
-  persistIncidents,
-  persistSignals,
-  persistTelemetry,
-} from "./clickhouse.js";
-import { OperatorStore } from "./store.js";
-
-const siteId = "PTY-BANK-01" as const;
+import { closeDemoQvac, seedOperatorDemo } from "./demo-fixtures.js";
 
 try {
-  await ensureTelemetrySchema();
-  const dgaEvents = generateScenario({
-    scenario: "dga",
-    count: 20,
-    siteId,
-    seed: 8_108_100,
-    startTime: "2026-09-10T12:00:00.000Z",
-  });
-  const beaconEvents = generateScenario({
-    scenario: "beacon",
-    count: 4,
-    siteId,
-    seed: 8_108_101,
-    startTime: "2026-09-10T12:00:00.000Z",
-  });
-  const events = [...dgaEvents, ...beaconEvents];
-  await persistTelemetry(events, collectSiteWindows(events));
-
-  const dga = processEvents(dgaEvents).filter((signal) => signal.type === "dga");
-  const beacon = processEvents(beaconEvents).filter(
-    (signal) => signal.type === "beaconing",
-  );
-  const correlator = new IncidentCorrelator();
-  const incidents = correlator.ingest([...dga, ...beacon]);
-  const incident = incidents[0];
-  if (!incident || incident.signalCount < 2) {
-    throw new Error("Expected a multi-signal incident for UI smoke.");
+  const demo = await seedOperatorDemo({ assessQvac: true, emitWazuh: true });
+  const skipped = demo.qvac.filter((result) => result.status === "skipped");
+  const live = demo.qvac.find((result) => result.status === "ok" && result.assessment);
+  if (skipped.length === 0 || !live?.assessment) {
+    throw new Error("Demo seed did not prove both QVAC skip and live local assessment.");
   }
-  const members = correlator.membersOf(incident.incidentId);
-  const store = new OperatorStore();
-  store.recordIncidents(incidents, members);
-  store.markWazuhEmitted([incident.incidentId]);
-  await persistIncidents(incidents);
-  await persistSignals(members);
+  if (!demo.ambiguousMembers.every((signal) => isAmbiguousSignal(signal))) {
+    throw new Error("Ambiguous members left the existing QVAC routing band.");
+  }
 
-  const api = await listenOperatorApi(store, 0);
+  const api = await listenOperatorApi(demo.store, 0);
   const base = `http://127.0.0.1:${api.port}`;
   try {
-    const system = systemStatusSchema.parse(await getJson(`${base}/api/system`));
-    if (system.cloudInference !== false || system.qvac.sdk !== "0.19.0") {
-      throw new Error("System view is not local-only QVAC 0.19.0.");
+    const system = await getJson(`${base}/api/system`);
+    if (
+      typeof system !== "object" ||
+      system === null ||
+      (system as { cloudInference?: unknown }).cloudInference !== false
+    ) {
+      throw new Error("System view is not local-only.");
     }
-    const overview = await getJson(`${base}/api/overview`);
-    if (!Array.isArray(overview.sites) || overview.sites.length !== 3) {
-      throw new Error("Overview did not list the three fictional sites.");
+    const overview = overviewResponseSchema.parse(await getJson(`${base}/api/overview`));
+    if (overview.sites.some((site) => site.latestQoe === null)) {
+      throw new Error("Overview is missing local QoE windows for one or more sites.");
     }
-    const list = await getJson(`${base}/api/incidents`);
-    if (!Array.isArray(list) || list.length < 1) {
-      throw new Error("Incidents list was empty.");
+    const high = incidentDetailSchema.parse(
+      await getJson(`${base}/api/incidents/${demo.highConfidence.incidentId}`),
+    );
+    const ambiguous = incidentDetailSchema.parse(
+      await getJson(`${base}/api/incidents/${demo.ambiguous.incidentId}`),
+    );
+    if (high.signals.length < 2 || high.signals.some((signal) => signal.evidence.length === 0)) {
+      throw new Error("High-confidence detail dropped member evidence.");
     }
-    const detail = await getJson(`${base}/api/incidents/${incident.incidentId}`);
-    const signals = detail.signals;
-    if (!Array.isArray(signals) || signals.length < 2) {
-      throw new Error("Incident detail did not include member evidence.");
+    if (!high.qvac.some((result) => result.status === "skipped")) {
+      throw new Error("High-confidence incident did not record a QVAC skip.");
+    }
+    if (high.qvac.some((result) => result.status === "ok")) {
+      throw new Error("High-confidence incident incorrectly ran QVAC inference.");
     }
     if (
-      signals.some(
-        (signal) =>
-          typeof signal !== "object" ||
-          signal === null ||
-          !Array.isArray((signal as { evidence?: unknown }).evidence) ||
-          (signal as { evidence: unknown[] }).evidence.length === 0,
-      )
+      ambiguous.qvac.every((result) => result.status !== "ok") ||
+      !ambiguous.qvac.some((result) => result.assessment)
     ) {
-      throw new Error("Incident detail dropped evidence rows.");
+      throw new Error("Ambiguous incident detail has no validated local QVAC assessment.");
     }
-    const site = await getJson(`${base}/api/sites/${siteId}`);
-    if (site.siteId !== siteId) {
-      throw new Error("Site detail did not return the requested site.");
+    if (!high.wazuh.emitted || !ambiguous.wazuh.emitted) {
+      throw new Error("Wazuh emit state is not truthful for seeded demo incidents.");
+    }
+    if (!high.currentWindow || !ambiguous.currentWindow) {
+      throw new Error("Incident detail is missing site window context.");
+    }
+    const bank = await getJson(`${base}/api/sites/${demo.highConfidence.siteId}`);
+    const health = await getJson(`${base}/api/sites/${demo.ambiguous.siteId}`);
+    if (
+      typeof bank !== "object" ||
+      bank === null ||
+      (bank as { siteId?: unknown }).siteId !== demo.highConfidence.siteId ||
+      typeof health !== "object" ||
+      health === null ||
+      (health as { siteId?: unknown }).siteId !== demo.ambiguous.siteId
+    ) {
+      throw new Error("Site detail did not return the seeded sites.");
     }
 
-    console.log("System     PASS");
-    console.log("Overview   PASS");
-    console.log("Incidents  PASS");
-    console.log(`Detail     PASS (${incident.incidentId})`);
-    console.log("Site       PASS");
+    console.log("System / QoE     PASS");
+    console.log(`High-confidence  PASS (${high.incident.incidentId}, QVAC skipped)`);
+    console.log(
+      `Ambiguous QVAC   PASS (${ambiguous.incident.incidentId}, ${live.assessment.assessment})`,
+    );
+    console.log("Wazuh emit       PASS");
+    console.log("Site windows     PASS");
   } finally {
     await api.close();
   }
@@ -101,13 +84,15 @@ try {
   console.error("Operator UI smoke test: FAIL");
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
+} finally {
+  await closeDemoQvac();
 }
 
-async function getJson(url: string): Promise<Record<string, unknown>> {
+async function getJson(url: string): Promise<unknown> {
   const response = await fetch(url);
   const body = await response.text();
   if (!response.ok) {
     throw new Error(`${url} -> ${response.status} ${body}`);
   }
-  return JSON.parse(body) as Record<string, unknown>;
+  return JSON.parse(body) as unknown;
 }

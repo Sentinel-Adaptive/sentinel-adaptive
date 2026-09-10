@@ -78,6 +78,20 @@ describe("synthetic DNS scenarios", () => {
     expect(new Set(beacon.map((event) => event.qname))).toEqual(
       new Set(["heartbeat.edge-service.test"]),
     );
+    const ambiguousBeacon = generateScenario({
+      scenario: "ambiguous-beacon",
+      count: 4,
+    });
+    expect(
+      new Date(ambiguousBeacon[3]?.timestamp ?? 0).getTime() -
+        new Date(ambiguousBeacon[0]?.timestamp ?? 0).getTime(),
+    ).toBe(39_400);
+    expect(ambiguousBeacon.map((event) => event.qname)).toEqual([
+      "heartbeat-probe.edge-service.test",
+      "heartbeat-probe.edge-service.test",
+      "heartbeat-probe.edge-service.test",
+      "status.edge-service.test",
+    ]);
     expect(typosquat.map((event) => event.qname)).toContain(
       "secure-bnak.test",
     );

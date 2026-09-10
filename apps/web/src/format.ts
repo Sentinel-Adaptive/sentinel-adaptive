@@ -1,14 +1,93 @@
 import type { SeverityHint } from "@sentinel-adaptive/contracts";
 
+const knownLabels: Record<string, string> = {
+  possible_c2_beaconing: "Possible C2 Beaconing",
+  possible_dns_tunneling: "Possible DNS Tunneling",
+  possible_dga: "Possible DGA",
+  possible_typosquatting: "Possible Typosquatting",
+  baseline_deviation: "Baseline Deviation",
+  beaconing: "Beaconing",
+  tunneling: "Tunneling",
+  dga: "DGA",
+  typosquatting: "Typosquatting",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+  consistent: "Consistent",
+  uncertain: "Uncertain",
+  insufficient_evidence: "Insufficient Evidence",
+  skipped: "Skipped",
+  ok: "Assessed",
+  invalid: "Invalid JSON",
+  unavailable: "Unavailable",
+  yes: "Yes",
+  no: "No",
+  unknown: "Unknown",
+};
+
 export function formatTime(iso: string): string {
   return `${iso.replace("T", " ").replace("Z", "")} UTC`;
 }
 
-export function formatRatio(value: number): string {
-  return value.toFixed(3);
+export function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`;
 }
 
-export function formatScore(value: number): string {
+export function formatLatencyMs(value: number): string {
+  return `${value.toFixed(2)} ms`;
+}
+
+export function formatEnumLabel(value: string): string {
+  if (knownLabels[value]) {
+    return knownLabels[value];
+  }
+  return value
+    .split(/[_-]/)
+    .map((part) => {
+      const lower = part.toLowerCase();
+      if (lower === "c2") {
+        return "C2";
+      }
+      if (lower === "dga") {
+        return "DGA";
+      }
+      if (lower === "qoe") {
+        return "QoE";
+      }
+      if (lower === "qvac") {
+        return "QVAC";
+      }
+      return `${part.charAt(0).toUpperCase()}${part.slice(1)}`;
+    })
+    .join(" ");
+}
+
+export function formatEvidenceValue(
+  metric: string,
+  value: string | number | boolean,
+): string {
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  const name = metric.toLowerCase();
+  if (name.includes("latency") || name.endsWith("ms")) {
+    return formatLatencyMs(value);
+  }
+  if (
+    name.includes("ratio") ||
+    name.includes("rate") ||
+    name === "saturation" ||
+    name === "availability" ||
+    name === "capacity"
+  ) {
+    return formatPercent(value);
+  }
+  if (Number.isInteger(value)) {
+    return String(value);
+  }
   return value.toFixed(2);
 }
 

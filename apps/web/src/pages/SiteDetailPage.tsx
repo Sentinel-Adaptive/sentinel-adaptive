@@ -4,8 +4,9 @@ import type { SiteDetail } from "@sentinel-adaptive/contracts";
 import type { ShellContext } from "../AppShell.js";
 import {
   compareIncidentSeverity,
-  formatRatio,
-  formatScore,
+  formatEnumLabel,
+  formatLatencyMs,
+  formatPercent,
   formatTime,
   severityClass,
 } from "../format.js";
@@ -36,23 +37,23 @@ export function SiteDetailPage() {
               <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm lg:grid-cols-3">
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-muted">Score</dt>
-                  <dd className="mt-0.5 tabular-nums">{formatScore(data.qoe.score)}</dd>
+                  <dd className="mt-0.5 tabular-nums">{formatPercent(data.qoe.score)}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-muted">Availability</dt>
                   <dd className="mt-0.5 tabular-nums">
-                    {formatScore(data.qoe.availability)}
+                    {formatPercent(data.qoe.availability)}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-muted">Latency factor</dt>
                   <dd className="mt-0.5 tabular-nums">
-                    {formatScore(data.qoe.latencyFactor)}
+                    {data.qoe.latencyFactor.toFixed(2)}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-muted">Capacity</dt>
-                  <dd className="mt-0.5 tabular-nums">{formatScore(data.qoe.capacity)}</dd>
+                  <dd className="mt-0.5 tabular-nums">{formatPercent(data.qoe.capacity)}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-muted">Weights</dt>
@@ -102,13 +103,13 @@ export function SiteDetailPage() {
                         {window.queryCount}
                       </td>
                       <td className="border-b border-line py-2 tabular-nums">
-                        {formatRatio(window.nxdomainRatio)}
+                        {formatPercent(window.nxdomainRatio)}
                       </td>
                       <td className="border-b border-line py-2 tabular-nums">
-                        {window.latencyP95}
+                        {formatLatencyMs(window.latencyP95)}
                       </td>
                       <td className="border-b border-line py-2 tabular-nums">
-                        {formatRatio(window.saturation)}
+                        {formatPercent(window.saturation)}
                       </td>
                     </tr>
                   ))}
@@ -142,9 +143,9 @@ export function SiteDetailPage() {
                           {incident.incidentId}
                         </Link>
                       </td>
-                      <td className="border-b border-line py-2">{incident.classification}</td>
+                      <td className="border-b border-line py-2">{formatEnumLabel(incident.classification)}</td>
                       <td className={`border-b border-line py-2 ${severityClass(incident.severity)}`}>
-                        {incident.severity}
+                        {formatEnumLabel(incident.severity)}
                       </td>
                       <td className="border-b border-line py-2 tabular-nums">
                         {incident.signalCount}

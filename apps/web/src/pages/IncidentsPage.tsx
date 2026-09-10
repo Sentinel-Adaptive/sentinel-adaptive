@@ -4,7 +4,8 @@ import type { Incident } from "@sentinel-adaptive/contracts";
 import type { ShellContext } from "../AppShell.js";
 import {
   compareIncidentSeverity,
-  formatScore,
+  formatEnumLabel,
+  formatPercent,
   severityClass,
 } from "../format.js";
 import { EmptyState, ErrorBanner, PageHeader, Panel } from "../ui.js";
@@ -58,12 +59,12 @@ export function IncidentsPage() {
                       {incident.siteId}
                     </Link>
                   </td>
-                  <td className="border-b border-line py-2">{incident.classification}</td>
+                  <td className="border-b border-line py-2">{formatEnumLabel(incident.classification)}</td>
                   <td className={`border-b border-line py-2 ${severityClass(incident.severity)}`}>
-                    {incident.severity}
+                    {formatEnumLabel(incident.severity)}
                   </td>
                   <td className="border-b border-line py-2 tabular-nums">
-                    {formatScore(incident.confidence)}
+                    {formatPercent(incident.confidence)}
                   </td>
                   <td className="border-b border-line py-2 tabular-nums">
                     {incident.signalCount}

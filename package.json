@@ -42,6 +42,8 @@
     "web:build": "npm run build -w @sentinel-adaptive/web",
     "demo:normal": "npm run generate -w @sentinel-adaptive/generator -- normal",
     "demo:beacon": "npm run generate -w @sentinel-adaptive/generator -- beacon",
+    "demo:ambiguous-beacon": "npm run generate -w @sentinel-adaptive/generator -- ambiguous-beacon",
+    "demo:seed": "npm run demo:seed -w @sentinel-adaptive/agent",
     "demo:tunnel": "npm run generate -w @sentinel-adaptive/generator -- tunnel",
     "demo:dga": "npm run generate -w @sentinel-adaptive/generator -- dga",
     "demo:typosquat": "npm run generate -w @sentinel-adaptive/generator -- typosquat",

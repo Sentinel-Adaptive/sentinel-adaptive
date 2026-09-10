@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Stage 8 — Sentinel professional UI complete
+Stage 8 — Sentinel professional UI complete (demo-readiness pass)
 
 ## Overall
 
@@ -29,7 +29,7 @@ None.
 
 ## Last verified result
 
-Local operator API served system, overview, incidents, incident detail, and site payloads from ClickHouse plus the live store. Seeded DGA + beacon members on `PTY-BANK-01` returned as `INC-1B41EDF624D62463` with evidence rows. Vite preview returned HTTP 200 for `/`, `/incidents`, `/incidents/:id`, `/sites/PTY-BANK-01`, and `/system`. System payload pinned local QVAC 0.19.0 and `cloudInference: false`.
+`npm run demo:seed` plus `npm run smoke:ui` populated three-site QoE windows from ClickHouse, kept high-confidence `INC-1B41EDF624D62463` on `PTY-BANK-01` as a QVAC skip, and ran live local QVAC on weak-beacon `INC-1AC334C9BD19C07D` (`PTY-HEALTH-01`, score ≈ 0.72). Wazuh emit is now derived from the event log and indexer, not only the current process memory. Overview QoE no longer disappears behind a ClickHouse `argMax` alias error.
 
 ## Next exact task
 
@@ -41,5 +41,7 @@ Begin Stage 9 by proving the judged path still runs locally after model availabi
 - Windows registry file locking may require the catalog GGUF `fallbackSrc`
 - Mixed `demo:combined` traffic can dilute per-rule evidence; correlation smoke uses independently generated same-site attacks
 - Beacon generator spacing is 15s, so a 6-event beacon crosses a 60s window
+- `LLAMA_3_2_1B_INST_Q4_0` assessments can vary across runs while remaining schema-valid
 - Incidents persisted before Stage 8 may lack ClickHouse member evidence until new traffic is processed
 - End-to-end demo timing
+- Restart `agent:serve` after `npm run demo:seed` so the UI process sees the seeded store path

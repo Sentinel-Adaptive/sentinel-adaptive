@@ -27,7 +27,7 @@ import {
   parseWindowRow,
 } from "./store.js";
 import { qvacLocalOnly } from "./qvac.js";
-import { wazuhIndexState } from "./wazuh.js";
+import { wazuhEmittedState, wazuhIndexState } from "./wazuh.js";
 
 export function parseJsonLines(text: string): Record<string, unknown>[] {
   return text
@@ -73,7 +73,7 @@ export async function buildOverview(
   const windows = await queryRows(
     `SELECT
          site_id,
-         max(bucket_start) AS bucket_start,
+         max(bucket_start) AS latest_bucket,
          argMax(qoe_score, bucket_start) AS qoe_score
        FROM site_metrics
        GROUP BY site_id
@@ -85,7 +85,7 @@ export async function buildOverview(
       String(row.site_id),
       {
         latestQoe: Number(row.qoe_score),
-        latestWindowStart: fromClickHouseDateTime(String(row.bucket_start)),
+        latestWindowStart: fromClickHouseDateTime(String(row.latest_bucket)),
       },
     ]),
   );
@@ -171,7 +171,7 @@ export async function buildIncidentDetail(
     signals,
     qvac,
     wazuh: {
-      emitted: store.wazuhEmittedFor(incidentId),
+      emitted: wazuhEmittedState(incidentId, store.wazuhEmittedFor(incidentId)),
       indexed,
     },
     ...(currentWindow ? { currentWindow } : {}),

@@ -62,9 +62,12 @@ npm run smoke:ui
 Operator UI (local API on port 3001, Vite dev server on 5173):
 
 ```bash
+npm run demo:seed
 npm run agent:serve
 npm run web:dev
 ```
+
+`demo:seed` writes real site QoE windows, the high-confidence DGA + beacon incident, and a second weak-beacon incident that local QVAC actually assesses. It does not invent metrics or assessments. Restart `agent:serve` after seeding if the API is already running.
 
 ## Development
 

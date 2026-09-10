@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { appendFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -122,6 +123,32 @@ export function wazuhIndexState(incidentId: string): "yes" | "no" | "unknown" {
     return "unknown";
   }
   return result.hits > 0 ? "yes" : "no";
+}
+
+export function wazuhEmittedInLog(
+  incidentId: string,
+  eventLog = defaultWazuhEventLog(),
+): boolean {
+  if (!existsSync(eventLog)) {
+    return false;
+  }
+  try {
+    return readFileSync(eventLog, "utf8").includes(
+      `"incident_id":"${incidentId}"`,
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function wazuhEmittedState(
+  incidentId: string,
+  alreadyEmitted = false,
+): boolean {
+  if (alreadyEmitted || wazuhEmittedInLog(incidentId)) {
+    return true;
+  }
+  return wazuhIndexState(incidentId) === "yes";
 }
 
 export async function waitForWazuhAlert(

@@ -22,6 +22,8 @@ export {
   defaultWazuhEventLog,
   emitWazuhIncidents,
   toWazuhIncidentEvent,
+  wazuhEmittedInLog,
+  wazuhEmittedState,
   wazuhIndexState,
 } from "./wazuh.js";
 export {

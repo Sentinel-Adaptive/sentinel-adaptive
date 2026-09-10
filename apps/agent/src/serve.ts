@@ -9,6 +9,7 @@ try {
   await ensureTelemetrySchema();
   const api = await listenOperatorApi(operatorStore, port);
   console.log(`Operator API http://127.0.0.1:${api.port}`);
+  console.log("If Overview has no QoE or incidents, run: npm run demo:seed");
   await consumeDnsStream({
     fromBeginning: process.argv.includes("--from-beginning"),
     onSignals(signals) {

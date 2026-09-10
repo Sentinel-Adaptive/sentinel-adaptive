@@ -4,7 +4,8 @@ import type { OverviewResponse } from "@sentinel-adaptive/contracts";
 import type { ShellContext } from "../AppShell.js";
 import {
   compareIncidentSeverity,
-  formatScore,
+  formatEnumLabel,
+  formatPercent,
   formatTime,
   severityClass,
 } from "../format.js";
@@ -44,7 +45,7 @@ export function OverviewPage() {
                       </Link>
                     </td>
                     <td className="border-b border-line py-2 tabular-nums">
-                      {site.latestQoe === null ? "No local windows" : formatScore(site.latestQoe)}
+                      {site.latestQoe === null ? "No local windows" : formatPercent(site.latestQoe)}
                     </td>
                     <td className="border-b border-line py-2 text-muted">
                       {site.latestWindowStart ? formatTime(site.latestWindowStart) : "—"}
@@ -108,12 +109,12 @@ function IncidentTable({
                 {incident.siteId}
               </Link>
             </td>
-            <td className="border-b border-line py-2">{incident.classification}</td>
+            <td className="border-b border-line py-2">{formatEnumLabel(incident.classification)}</td>
             <td className={`border-b border-line py-2 ${severityClass(incident.severity)}`}>
-              {incident.severity}
+              {formatEnumLabel(incident.severity)}
             </td>
             <td className="border-b border-line py-2 tabular-nums">
-              {formatScore(incident.confidence)}
+              {formatPercent(incident.confidence)}
             </td>
             <td className="border-b border-line py-2 tabular-nums">
               {incident.signalCount}
