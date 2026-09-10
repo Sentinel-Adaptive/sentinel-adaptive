@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Stage 3 — Detection, baseline, and rules complete
+Stage 3.5 — Ovnicom challenge dataset integration complete
 
 ## Overall
 
@@ -10,6 +10,7 @@ Stage 3 — Detection, baseline, and rules complete
 - [x] Stage 1 — Infrastructure smoke test
 - [x] Stage 2 — Synthetic stream
 - [x] Stage 3 — Detection and baseline
+- [x] Stage 3.5 — Ovnicom challenge dataset integration
 - [ ] Stage 4 — ClickHouse, QoE, and Grafana
 - [ ] Stage 5 — Wazuh integration
 - [ ] Stage 6 — QVAC load-bearing inference
@@ -24,11 +25,11 @@ None.
 
 ## Last verified command
 
-`npm run smoke:detection`
+`npm run smoke:ovnicom`
 
 ## Last verified result
 
-The agent consumed live synthetic DNS events from `dns.telemetry`. Normal traffic did not emit high severity. DGA, tunnel, beacon, and typosquat scenarios produced typed deterministic signals with evidence. The same NXDOMAIN ratio scores as a larger deviation on `PTY-BANK-01` than on `COL-GOV-01`.
+The streaming replayer parsed 10,000 BIND query records from the local Ovnicom challenge dataset, published them to `dns.telemetry`, and the Stage 3 engine consumed them. Nine malformed lines were skipped. A subsequent synthetic DGA burst on the same topic still produced an evidenced DGA signal. Existing generator and detection smokes continue to pass.
 
 ## Next exact task
 

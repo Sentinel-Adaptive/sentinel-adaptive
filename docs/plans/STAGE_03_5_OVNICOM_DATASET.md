@@ -60,16 +60,16 @@ Do not copy or commit raw `queries.*` files.
 ## Exact implementation tasks
 
 - [x] Inspect the actual challenge files and record source-derived fields
-- [ ] Publish this persistent stage plan
-- [ ] Extend the DNS event contract with provenance without breaking Stage 2/3 events
-- [ ] Stream BIND logs line-by-line, skip malformed lines, and count failures
-- [ ] Enrich missing contract fields and list them in `provenance.enrichedFields`
-- [ ] Publish replayed events to the existing Kafka topic
-- [ ] Add unit tests for parse, provenance, site mapping, and pipeline compatibility
-- [ ] Run a limited live integration (5,000–25,000 records) plus one synthetic attack
-- [ ] Update DATA, README, STATUS, and ARCHITECTURE
-- [ ] Confirm raw dataset paths are gitignored and untracked
-- [ ] Commit and push stable checkpoints, then close the stage
+- [x] Publish this persistent stage plan
+- [x] Extend the DNS event contract with provenance without breaking Stage 2/3 events
+- [x] Stream BIND logs line-by-line, skip malformed lines, and count failures
+- [x] Enrich missing contract fields and list them in `provenance.enrichedFields`
+- [x] Publish replayed events to the existing Kafka topic
+- [x] Add unit tests for parse, provenance, site mapping, and pipeline compatibility
+- [x] Run a limited live integration (5,000–25,000 records) plus one synthetic attack
+- [x] Update DATA, README, STATUS, and ARCHITECTURE
+- [x] Confirm raw dataset paths are gitignored and untracked
+- [x] Commit and push stable checkpoints, then close the stage
 
 ## Dependencies
 
@@ -135,4 +135,4 @@ npm run health
 
 ## Unresolved items
 
-None at plan creation.
+None. Live smoke used 10,000 parsed challenge records plus a 20-event synthetic DGA burst on `dns.telemetry`.

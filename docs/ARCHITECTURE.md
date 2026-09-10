@@ -48,4 +48,4 @@ Kafka processing and deterministic metrics must continue if QVAC is unavailable 
 
 ## Current implementation state
 
-Stages 0–3 are operational locally, and Stage 3.5 adds challenge-dataset replay onto the same Kafka ingestion path. ClickHouse QoE persistence, Wazuh incident emission, QVAC inference, correlation, and the UI remain later stages and must not be described as complete.
+Stages 0–3.5 are operational locally: infrastructure smoke, synthetic Kafka telemetry, QVAC-off detection with per-site baselines, and challenge-dataset replay onto the same ingestion path. ClickHouse QoE persistence, Wazuh incident emission, QVAC inference, correlation, and the UI remain later stages and must not be described as complete.
