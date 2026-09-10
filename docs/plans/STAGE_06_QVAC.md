@@ -10,7 +10,7 @@ Stages 3–5 already produce deterministic signals and can emit them to Wazuh. T
 
 ## Current repository state
 
-Stages 0–5 are complete. Detection math is QVAC-off. Compliance currently allows missing QVAC packages. No `@qvac/*` dependency is installed yet.
+Stages 0–6 are complete. `@qvac/sdk` and `@qvac/inference` are pinned to `0.19.0`. Ambiguous evidenced signals are assessed locally; high-confidence signals skip QVAC.
 
 ## Routing policy
 
@@ -57,16 +57,16 @@ Do not add cloud providers, `startQVACProvider`, `.delegate(`, incident correlat
 
 ## Exact implementation tasks
 
-- [ ] Publish this persistent stage plan
-- [ ] Add the QVAC JSON contract and ambiguous-score router with unit tests
-- [ ] Pin `@qvac/sdk` and `@qvac/inference` to `0.19.0` on the agent
-- [ ] Load `LLAMA_3_2_1B_INST_Q4_0` locally and complete from an evidence-only prompt
-- [ ] Validate output; treat invalid/unavailable as non-fatal
-- [ ] Skip QVAC for high-confidence signals
-- [ ] Wire assessment into `consumeDnsStream` without blocking Kafka on failure
-- [ ] Require the QVAC pins in `npm run compliance`
-- [ ] Add `npm run smoke:qvac` that loads the local model, assesses one ambiguous bundle, and proves a high-confidence skip
-- [ ] Update STATUS/ARCHITECTURE/COMPLIANCE/README; commit and push; close the stage
+- [x] Publish this persistent stage plan
+- [x] Add the QVAC JSON contract and ambiguous-score router with unit tests
+- [x] Pin `@qvac/sdk` and `@qvac/inference` to `0.19.0` on the agent
+- [x] Load `LLAMA_3_2_1B_INST_Q4_0` locally and complete from an evidence-only prompt
+- [x] Validate output; treat invalid/unavailable as non-fatal
+- [x] Skip QVAC for high-confidence signals
+- [x] Wire assessment into `consumeDnsStream` without blocking Kafka on failure
+- [x] Require the QVAC pins in `npm run compliance`
+- [x] Add `npm run smoke:qvac` that loads the local model, assesses one ambiguous bundle, and proves a high-confidence skip
+- [x] Update STATUS/ARCHITECTURE/COMPLIANCE/README; commit and push; close the stage
 
 ## Dependencies
 
@@ -87,6 +87,8 @@ Do not add cloud providers, `startQVACProvider`, `.delegate(`, incident correlat
 - Parse the first JSON object from the completion; if Zod fails, mark `invalid`
 - If `loadModel`/`completion` throws, mark `unavailable` and continue
 - Do not call QVAC when `QVAC_LOCAL_ONLY` is not true
+- If the QVAC registry cannot lock/download on Windows, use the catalog model's checksum-validated GGUF `fallbackSrc`
+- Constrain `usedEvidence` to the supplied metric names in the JSON schema
 
 ## Acceptance criteria
 
@@ -127,4 +129,4 @@ npm run health
 
 ## Unresolved items
 
-None at plan creation.
+On this Windows host the QVAC registry download failed with `File descriptor could not be locked`. `loadModel` uses the catalog `LLAMA_3_2_1B_INST_Q4_0` GGUF `fallbackSrc`, checksum-validated by the SDK. Inference is forced to CPU (`gpu_layers: 0`). Neither is a cloud inference path.

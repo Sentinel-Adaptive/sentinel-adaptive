@@ -40,8 +40,8 @@ Run:
 npm run compliance
 ```
 
-Stage 0 checks executable configuration and package manifests for prohibited cloud-AI dependencies, credentials, and inference endpoints. Later stages will extend this check to require the pinned QVAC packages, model documentation, and an offline local inference proof.
+Stage 0 checks executable configuration and package manifests for prohibited cloud-AI dependencies, credentials, and inference endpoints. Stage 6 requires `@qvac/sdk` and `@qvac/inference` to be pinned exactly to `0.19.0`. Stage 9 will add an offline local inference proof.
 
 ## Current status
 
-Stage 0 contains no runtime AI dependency or inference implementation. QVAC is intentionally introduced and pinned during Stage 6.
+`npm run compliance` requires `@qvac/sdk` and `@qvac/inference` 0.19.0. Judged inference loads `LLAMA_3_2_1B_INST_Q4_0` in-process. Invalid or unavailable QVAC output does not stop Kafka consumption. DHT/provider APIs remain forbidden. An offline-disconnected proof remains Stage 9.

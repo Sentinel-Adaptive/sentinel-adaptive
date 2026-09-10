@@ -40,11 +40,11 @@ flowchart LR
 
 ## Inference boundary
 
-All judged inference must execute locally through `@qvac/sdk` and `@qvac/inference` 0.19.0 using `LLAMA_3_2_1B_INST_Q4_0`. QVAC receives structured derived evidence only. It cannot invent or fetch reputation, WHOIS, ownership, ASN, or malware-family data.
+All judged inference must execute locally through `@qvac/sdk` and `@qvac/inference` 0.19.0 using `LLAMA_3_2_1B_INST_Q4_0`. QVAC receives structured derived evidence only, and only for scores in `[0.60, 0.75)`. It cannot invent or fetch reputation, WHOIS, ownership, ASN, or malware-family data. The original deterministic signal is not mutated.
 
 ## Failure behavior
 
-Kafka processing and deterministic metrics must continue if QVAC is unavailable or returns invalid JSON. Model output is schema-validated before persistence. Raw signals remain available after incident correlation. ClickHouse write failures are logged and must not stop Kafka consumption. Wazuh log write failures are logged the same way.
+Kafka processing and deterministic metrics must continue if QVAC is unavailable or returns invalid JSON. Model output is schema-validated before use. Raw signals remain available after incident correlation. ClickHouse write failures are logged and must not stop Kafka consumption. Wazuh log write failures and QVAC assessment failures are logged the same way.
 
 ## Transparent QoE
 
@@ -52,4 +52,4 @@ Site QoE is a weighted combination of availability (`1 - nxdomainRatio`), latenc
 
 ## Current implementation state
 
-Stages 0–5 are operational locally: infrastructure smoke, synthetic Kafka telemetry, QVAC-off detection with per-site baselines, challenge-dataset replay, ClickHouse persistence of DNS events and site windows, a Grafana dashboard for transparent QoE, and Wazuh ingestion of uncorrelated detection signals. QVAC inference, correlation, and the UI remain later stages and must not be described as complete.
+Stages 0–6 are operational locally: infrastructure smoke, synthetic Kafka telemetry, per-site detection baselines, challenge-dataset replay, ClickHouse persistence of DNS events and site windows, a Grafana dashboard for transparent QoE, Wazuh ingestion of uncorrelated detection signals, and local QVAC assessment of ambiguous evidenced candidates. Incident correlation and the UI remain later stages and must not be described as complete.
