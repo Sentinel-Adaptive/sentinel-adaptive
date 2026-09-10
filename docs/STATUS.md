@@ -33,7 +33,7 @@ Public outbound isolation blocked `https://example.com`. Local `LLAMA_3_2_1B_INS
 
 ## Next exact task
 
-Publish the Stage 10 plan, rewrite the README for judges, add `docs/DEMO.md`, and add a repository submission check. The screen recording stays an operator step.
+Record the five-minute demonstration by following `docs/DEMO.md`. Do not close Stage 10 until that recording exists or the operator accepts the written walkthrough as the submitted artifact.
 
 ## Known risks
 

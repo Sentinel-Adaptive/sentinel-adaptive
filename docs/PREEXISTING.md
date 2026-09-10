@@ -22,6 +22,8 @@ Any generated shadcn components, additional imported dashboards, starters, or te
 
 ## Public datasets
 
-No public dataset has been added. Demo telemetry will initially be generated synthetically.
+The Ovnicom challenge BIND query logs are replayed locally when the operator points `OVNICOM_DATASET_PATH` or `--path` at them. Those files are not committed. They are documented in `docs/DATA.md` and are not treated as customer or production telemetry.
 
-Any public domain list introduced later must record its source, license, purpose, and addition date here.
+Labeled attack ground truth in this repository comes only from `tools/generator` synthetic scenarios.
+
+Any additional public domain list must record its source, license, purpose, and addition date here.

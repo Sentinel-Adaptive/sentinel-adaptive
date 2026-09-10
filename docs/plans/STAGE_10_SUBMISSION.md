@@ -39,11 +39,11 @@ Do not add a placeholder video file.
 
 ## Exact implementation tasks
 
-- [ ] Publish this persistent stage plan
-- [ ] Rewrite the README to describe the built system and link the five-minute demo
-- [ ] Write `docs/DEMO.md` with prep commands and a timed operator walkthrough
-- [ ] Add `npm run submission` that checks tracked files and required public docs
-- [ ] Keep typecheck, lint, unit tests, and compliance passing
+- [x] Publish this persistent stage plan
+- [x] Rewrite the README to describe the built system and link the five-minute demo
+- [x] Write `docs/DEMO.md` with prep commands and a timed operator walkthrough
+- [x] Add `npm run submission` that checks tracked files and required public docs
+- [x] Keep typecheck, lint, unit tests, and compliance passing
 - [ ] Record the demonstration video by following `docs/DEMO.md` (operator)
 - [ ] Update STATUS; commit and push; close the stage only after the video exists or the operator accepts the written demo as the recorded artifact
 

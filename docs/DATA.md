@@ -55,6 +55,7 @@ The existing generator in `tools/generator` remains the source of labeled, deter
 - DGA
 - DNS tunneling
 - beaconing / possible C2
+- ambiguous beaconing (score kept inside the QVAC band)
 - typosquatting
 - latency degradation
 - saturation

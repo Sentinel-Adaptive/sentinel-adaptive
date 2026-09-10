@@ -18,6 +18,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "compliance": "node scripts/verify-compliance.mjs",
+    "submission": "node scripts/verify-submission.mjs",
     "health": "node scripts/healthcheck.mjs",
     "infra:config": "docker compose -f infra/docker-compose.yml config",
     "infra:plugins": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-grafana-plugin.ps1",
