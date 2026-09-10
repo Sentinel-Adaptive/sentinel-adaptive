@@ -18,7 +18,11 @@
     "test": "vitest run",
     "lint": "eslint .",
     "compliance": "node scripts/verify-compliance.mjs",
-    "health": "node scripts/healthcheck.mjs"
+    "health": "node scripts/healthcheck.mjs",
+    "infra:config": "docker compose -f infra/docker-compose.yml config",
+    "infra:up:core": "docker compose -f infra/docker-compose.yml up -d --wait kafka clickhouse",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "smoke:infra": "node scripts/smoke-infra.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
