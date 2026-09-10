@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Stage 3.5 — Ovnicom challenge dataset integration complete
+Stage 4 — ClickHouse, QoE, and Grafana complete
 
 ## Overall
 
@@ -11,7 +11,7 @@ Stage 3.5 — Ovnicom challenge dataset integration complete
 - [x] Stage 2 — Synthetic stream
 - [x] Stage 3 — Detection and baseline
 - [x] Stage 3.5 — Ovnicom challenge dataset integration
-- [ ] Stage 4 — ClickHouse, QoE, and Grafana
+- [x] Stage 4 — ClickHouse, QoE, and Grafana
 - [ ] Stage 5 — Wazuh integration
 - [ ] Stage 6 — QVAC load-bearing inference
 - [ ] Stage 7 — Incident correlation
@@ -25,15 +25,15 @@ None.
 
 ## Last verified command
 
-`npm run smoke:ovnicom`
+`npm run smoke:qoe`
 
 ## Last verified result
 
-The streaming replayer parsed 10,000 BIND query records from the local Ovnicom challenge dataset, published them to `dns.telemetry`, and the Stage 3 engine consumed them. Nine malformed lines were skipped. A subsequent synthetic DGA burst on the same topic still produced an evidenced DGA signal. Existing generator and detection smokes continue to pass.
+Kafka events were persisted to ClickHouse `dns_events` and `site_metrics`. For `PTY-BANK-01`, mean QoE was 0.956 on normal traffic and 0.509 on `degrade-qoe`. The provisioned Grafana dashboard `sentinel-site-qoe` reads `sentinel.site_metrics`. Generator and detection smokes still pass.
 
 ## Next exact task
 
-Begin Stage 4 by persisting site metrics, calculating transparent QoE, and wiring those values into the provisioned Grafana dashboard.
+Begin Stage 5 by emitting structured incident events through the local Wazuh monitored JSON log and verifying they are processed.
 
 ## Known risks
 

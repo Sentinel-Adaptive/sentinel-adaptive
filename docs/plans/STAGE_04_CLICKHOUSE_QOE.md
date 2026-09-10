@@ -52,16 +52,16 @@ Do not add QVAC, Wazuh emission, incident correlation, or the operator UI.
 
 ## Exact implementation tasks
 
-- [ ] Publish this persistent stage plan
-- [ ] Add the QoE contract and pure `calculateQoe` function with tests
-- [ ] Prove `demo:degrade-qoe` scores lower than `demo:normal` for the same fictional site
-- [ ] Add ClickHouse tables `dns_events` and `site_metrics` (init SQL plus runtime `CREATE IF NOT EXISTS`)
-- [ ] Persist validated DNS events and completed site windows from the agent
-- [ ] Store QoE components and weights with each site-metric row
-- [ ] Provision a Grafana dashboard against `site_metrics`
-- [ ] Add `npm run smoke:qoe` covering persist, query, QoE drop, and dashboard presence
-- [ ] Keep existing generator, detection, Ovnicom, health, and infra smokes passing
-- [ ] Update STATUS/ARCHITECTURE/DATA/README; commit and push checkpoints; close the stage
+- [x] Publish this persistent stage plan
+- [x] Add the QoE contract and pure `calculateQoe` function with tests
+- [x] Prove `demo:degrade-qoe` scores lower than `demo:normal` for the same fictional site
+- [x] Add ClickHouse tables `dns_events` and `site_metrics` (init SQL plus runtime `CREATE IF NOT EXISTS`)
+- [x] Persist validated DNS events and completed site windows from the agent
+- [x] Store QoE components and weights with each site-metric row
+- [x] Provision a Grafana dashboard against `site_metrics`
+- [x] Add `npm run smoke:qoe` covering persist, query, QoE drop, and dashboard presence
+- [x] Keep existing generator, detection, Ovnicom, health, and infra smokes passing
+- [x] Update STATUS/ARCHITECTURE/DATA/README; commit and push checkpoints; close the stage
 
 ## Dependencies
 
@@ -125,4 +125,4 @@ npm run health
 
 ## Unresolved items
 
-None at plan creation.
+None. Live smoke stored Kafka telemetry in ClickHouse and showed QoE 0.956 on normal `PTY-BANK-01` traffic versus 0.509 on `degrade-qoe`.
