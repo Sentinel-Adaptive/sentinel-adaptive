@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -183,6 +185,90 @@ async function smokeGrafana() {
   }
 }
 
+async function findWazuhAlert(incidentId) {
+  const user = process.env.WAZUH_INDEXER_USER ?? "admin";
+  const password = process.env.WAZUH_INDEXER_PASSWORD ?? "SecretPassword";
+  const query = JSON.stringify({
+    query: {
+      match: {
+        "data.incident_id": incidentId,
+      },
+    },
+  });
+  const result = runCompose(
+    [
+      "exec",
+      "-T",
+      "wazuh.indexer",
+      "curl",
+      "-kfsS",
+      "-u",
+      `${user}:${password}`,
+      "-H",
+      "Content-Type: application/json",
+      "https://localhost:9200/wazuh-alerts-*/_search",
+      "--data-binary",
+      "@-",
+    ],
+    { allowFailure: true, input: query },
+  );
+
+  if (result.status !== 0) {
+    return false;
+  }
+
+  const response = JSON.parse(result.stdout);
+  return (response.hits?.total?.value ?? 0) > 0;
+}
+
+async function smokeWazuh(marker) {
+  const fixturePath = path.join(
+    root,
+    "infra",
+    "wazuh",
+    "fixtures",
+    "sentinel-event.json",
+  );
+  const runtimeDirectory = path.join(root, "infra", "wazuh", "runtime");
+  const eventLog = path.join(runtimeDirectory, "events.json");
+  const event = JSON.parse(await readFile(fixturePath, "utf8"));
+  event.incident_id = `INC-STAGE1-${marker.slice(-12).toUpperCase()}`;
+
+  await mkdir(runtimeDirectory, { recursive: true });
+  await appendFile(eventLog, `${JSON.stringify(event)}\n`, "utf8");
+
+  const dashboard = runCompose(
+    [
+      "exec",
+      "-T",
+      "wazuh.dashboard",
+      "curl",
+      "-kfsS",
+      "-u",
+      `${process.env.WAZUH_INDEXER_USER ?? "admin"}:${process.env.WAZUH_INDEXER_PASSWORD ?? "SecretPassword"}`,
+      "https://localhost:5601/api/status",
+    ],
+    { allowFailure: true },
+  );
+
+  if (dashboard.status !== 0) {
+    throw new Error(
+      `Wazuh dashboard health failed:\n${dashboard.stderr || dashboard.stdout}`,
+    );
+  }
+
+  for (let attempt = 0; attempt < 18; attempt += 1) {
+    if (await findWazuhAlert(event.incident_id)) {
+      return;
+    }
+    await delay(5000);
+  }
+
+  throw new Error(
+    `Wazuh did not index processed incident '${event.incident_id}' within 90 seconds.`,
+  );
+}
+
 const marker = `sentinel-stage1-${randomUUID()}`;
 
 try {
@@ -194,6 +280,9 @@ try {
 
   await smokeGrafana();
   console.log("Grafana     PASS");
+
+  await smokeWazuh(marker);
+  console.log("Wazuh       PASS");
 } catch (error) {
   console.error("Infrastructure smoke test: FAIL");
   console.error(error instanceof Error ? error.message : error);

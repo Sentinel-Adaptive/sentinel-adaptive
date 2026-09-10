@@ -1,0 +1,10 @@
+services:
+  generator:
+    image: wazuh/wazuh-certs-generator:0.0.4
+    hostname: wazuh-certs-generator
+    entrypoint: ["/bin/bash", "/generate-certs-local.sh"]
+    volumes:
+      - ./certs/generated:/certificates
+      - ./config/certs.yml:/config/certs.yml:ro
+      - ./certs/tool:/tool:ro
+      - ./generate-certs-local.sh:/generate-certs-local.sh:ro

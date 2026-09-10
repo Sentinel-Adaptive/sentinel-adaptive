@@ -1,0 +1,9 @@
+<group name="sentinel_adaptive,dns,">
+  <rule id="100100" level="10">
+    <decoded_as>json</decoded_as>
+    <field name="source">^sentinel-adaptive$</field>
+    <field name="event_type">^dns_security_incident$</field>
+    <description>Sentinel Adaptive DNS security incident: $(classification)</description>
+    <group>security_event,</group>
+  </rule>
+</group>

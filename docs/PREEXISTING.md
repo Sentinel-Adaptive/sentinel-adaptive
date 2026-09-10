@@ -10,7 +10,11 @@ Standard dependencies are declared in package manifests and, in later stages, Do
 
 ## Templates and UI bases
 
-None added in Stage 0. Any generated shadcn components, imported dashboards, starters, or templates must be listed here when introduced.
+- Wazuh Docker single-node configuration adapted from `wazuh/wazuh-docker` tag `v4.14.7` (GPL-2.0) on 2026-09-10.
+- Grafana ClickHouse datasource plugin `4.20.0` is downloaded from the official `grafana/clickhouse-datasource` release during local setup; the binary is not committed.
+- The Stage 1 Grafana smoke dashboard is project-authored and not imported from a template.
+
+Any generated shadcn components, additional imported dashboards, starters, or templates must be listed here when introduced.
 
 ## Public datasets
 

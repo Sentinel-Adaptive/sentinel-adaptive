@@ -1,0 +1,11 @@
+{
+  "source": "sentinel-adaptive",
+  "event_type": "dns_security_incident",
+  "incident_id": "INC-STAGE1-SMOKE",
+  "site_id": "PTY-BANK-01",
+  "classification": "possible_c2_beaconing",
+  "severity": "high",
+  "confidence": 0.87,
+  "signal_count": 3,
+  "summary": "Synthetic periodic DNS activity deviates from the fictional site baseline."
+}
