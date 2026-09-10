@@ -6,7 +6,9 @@ Sentinel Adaptive will process synthetic DNS telemetry locally, compare observat
 
 ```mermaid
 flowchart LR
+    Ovnicom[Ovnicom challenge dataset] --> Replay[Challenge log replayer]
     Generator[Synthetic Generator] --> Kafka[Kafka KRaft]
+    Replay --> Kafka
     Kafka --> Agent[Sentinel Agent]
     Agent --> Features[Feature Engine]
     Features --> Baseline[Per-Site Baseline]
@@ -33,6 +35,7 @@ flowchart LR
 - `packages/contracts`: shared runtime and TypeScript contracts
 - `packages/detection`: pure detection, baseline, correlation, severity, and QoE functions
 - `tools/generator`: deterministic synthetic scenarios
+- `tools/ovnicom-replay`: streaming parser for the Ovnicom challenge BIND query logs
 - `infra`: reproducible local infrastructure configuration
 
 ## Inference boundary
@@ -45,4 +48,4 @@ Kafka processing and deterministic metrics must continue if QVAC is unavailable 
 
 ## Current implementation state
 
-Stages 0–3 are operational locally: infrastructure smoke, synthetic Kafka telemetry, and QVAC-off detection with per-site baselines and evidenced signals. ClickHouse QoE persistence, Wazuh incident emission, QVAC inference, correlation, and the UI remain later stages and must not be described as complete.
+Stages 0–3 are operational locally, and Stage 3.5 adds challenge-dataset replay onto the same Kafka ingestion path. ClickHouse QoE persistence, Wazuh incident emission, QVAC inference, correlation, and the UI remain later stages and must not be described as complete.

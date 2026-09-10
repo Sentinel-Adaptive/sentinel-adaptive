@@ -21,6 +21,10 @@ Define the DNS event contract and deterministic Kafka scenarios for fictional si
 
 Implement tested feature extraction, rolling per-site baselines, deviations, deterministic rules, and evidence-bearing signal objects.
 
+## Stage 3.5 — Ovnicom challenge dataset integration
+
+Replay the challenge-provided BIND DNS query logs as a Kafka stream without replacing the synthetic generator. Parse only fields that exist in the logs, mark every other contract field as synthetic enrichment, and keep both sources on `dns.telemetry`.
+
 ## Stage 4 — ClickHouse, QoE, and Grafana
 
 Persist telemetry and site metrics, calculate transparent QoE, and provision the Grafana datasource and dashboard.

@@ -2,7 +2,9 @@
 
 **Context-Aware DNS Intelligence at the Edge**
 
-Sentinel Adaptive is a hackathon project for turning synthetic DNS telemetry into contextual, explainable security incidents. The planned system compares behavior with each site's own baseline, correlates related signals, and uses local QVAC inference to assess ambiguous evidence.
+Sentinel Adaptive is a hackathon project for turning DNS telemetry into contextual, explainable security incidents. The planned system compares behavior with each site's own baseline, correlates related signals, and uses local QVAC inference to assess ambiguous evidence.
+
+Sentinel Adaptive replays the DNS dataset supplied with the Ovnicom challenge as a live Kafka stream and combines it with controlled synthetic security scenarios for reproducible evaluation. The challenge files are BIND query logs from the challenge materials; this repository does not treat them as customer or production telemetry.
 
 > Tracks: Track 03 — Sovereign Intelligence at the Edge and Track 04 — Ovnicom Sentinel-DNS
 
@@ -22,7 +24,9 @@ No cloud AI inference path is part of the design. Only synthetic or documented p
 
 ```mermaid
 flowchart LR
+    Ovnicom[Ovnicom challenge dataset] --> Replay[Challenge log replayer]
     Generator[Synthetic DNS Generator] --> Kafka[Kafka]
+    Replay --> Kafka
     Kafka --> Agent[Sentinel Agent]
     Agent --> Detection[Features and Rules]
     Detection --> Baseline[Per-Site Baseline]
@@ -39,9 +43,16 @@ flowchart LR
 
 ## Current status
 
-Stage 0 repository scaffolding and compliance guardrails are complete. Streaming, detection, infrastructure, QVAC inference, and the operator UI are not implemented yet.
+Stages 0–3 are complete locally. Stage 3.5 adds replay of the Ovnicom challenge BIND query logs onto the same `dns.telemetry` topic, combined with the existing synthetic generator. ClickHouse QoE persistence, Wazuh incident emission, QVAC inference, correlation, and the operator UI remain later stages and must not be described as complete.
 
-See [the build plan](docs/BUILD_PLAN.md), [current status](docs/STATUS.md), and [compliance boundary](docs/COMPLIANCE.md).
+See [the build plan](docs/BUILD_PLAN.md), [current status](docs/STATUS.md), [data sources](docs/DATA.md), and [compliance boundary](docs/COMPLIANCE.md).
+
+Challenge dataset replay (local path via `OVNICOM_DATASET_PATH` or `--path`):
+
+```bash
+npm run ovnicom:replay -- --limit 10000 --dry-run
+npm run smoke:ovnicom
+```
 
 ## Development
 

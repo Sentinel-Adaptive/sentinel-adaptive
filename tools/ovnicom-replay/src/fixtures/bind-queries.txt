@@ -1,0 +1,10 @@
+09-Sep-2026 08:04:59.901 queries: info: client @0x7fa2c438edf0 192.0.2.10#35082 (portal.example.test): query: portal.example.test IN A + (203.0.113.53)
+09-Sep-2026 08:04:59.912 queries: info: client @0x7fa2c438edf0 192.0.2.10#56836 (unifi): query: unifi IN A + (203.0.113.53)
+09-Sep-2026 08:04:59.937 queries: info: client @0x7fa2d53e0c30 198.51.100.20#30200 (app.example.test): query: app.example.test IN TYPE65 + (203.0.113.53)
+09-Sep-2026 08:05:00.010 queries: info: client @0x7fa2c438edf0 203.0.113.8#4455 (1.0.0.127.in-addr.arpa): query: 1.0.0.127.in-addr.arpa IN PTR + (203.0.113.53)
+09-Sep-2026 08:05:00.020 queries: info: client @0x7fa2c438edf0 192.0.2.11#4456 (_ldap._tcp.dc.example.test): query: _ldap._tcp.dc.example.test IN SRV + (203.0.113.53)
+09-Sep-2026 08:05:00.030 queries: info: client @0x7fa2c438edf0 192.0.2.12#4457 (svc.example.test): query: svc.example.test IN TYPE64 + (203.0.113.53)
+09-Sep-2026 08:05:00.040 queries: info: client @0x7fa2c438edf0 192.0.2.10#4458 (mail.example.test): query: mail.example.test IN A +E(0)D (203.0.113.53)
+
+not a bind query line
+09-Sep-2026 08:05:00.050 queries: info: broken
