@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Stage 8 — Sentinel professional UI complete (demo-readiness pass)
+Stage 9 — Offline and compliance proof (in progress)
 
 ## Overall
 
@@ -33,7 +33,7 @@ Ambiguous QVAC on `INC-1AC334C9BD19C07D` is assessed locally (`status: ok`, `clo
 
 ## Next exact task
 
-Stage 9 is not started. After this mapping fix is on `origin/main`, prove the judged path still runs locally after model availability with outbound internet disabled.
+Publish the Stage 9 plan, prefer the cached local GGUF after first availability, and add `npm run smoke:offline` that disables outbound internet for Node/Bare and re-runs live local QVAC.
 
 ## Known risks
 
