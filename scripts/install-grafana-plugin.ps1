@@ -7,7 +7,27 @@ $downloadUrl = "https://github.com/grafana/clickhouse-datasource/releases/downlo
 $root = Split-Path -Parent $PSScriptRoot
 $cacheDirectory = Join-Path $root ".temp\grafana"
 $archivePath = Join-Path $cacheDirectory $assetName
-$pluginDirectory = Join-Path $root "infra\grafana\plugins"
+$pluginDirectory = Join-Path $root "infra\grafana\plugin-cache\$pluginVersion"
+$installedManifestPath = Join-Path $pluginDirectory "$pluginId\plugin.json"
+$requiredPluginFiles = @(
+    "$pluginId\plugin.json",
+    "$pluginId\MANIFEST.txt",
+    "$pluginId\gpx_clickhouse_linux_amd64",
+    "$pluginId\dashboards\system-dashboards.json"
+)
+
+if (-not ($requiredPluginFiles | Where-Object {
+    -not (Test-Path (Join-Path $pluginDirectory $_))
+})) {
+    $installedManifest = Get-Content -Raw -Path $installedManifestPath | ConvertFrom-Json
+    if (
+        $installedManifest.id -eq $pluginId -and
+        $installedManifest.info.version -eq $pluginVersion
+    ) {
+        Write-Output "Grafana plugin already ready: $pluginId $pluginVersion"
+        exit 0
+    }
+}
 
 New-Item -ItemType Directory -Force -Path $cacheDirectory | Out-Null
 
@@ -17,6 +37,9 @@ if (-not (Test-Path $archivePath)) {
 }
 
 if (Test-Path $pluginDirectory) {
+    Get-ChildItem -Path $pluginDirectory -Recurse -Force -File | ForEach-Object {
+        $_.IsReadOnly = $false
+    }
     Remove-Item -Recurse -Force $pluginDirectory
 }
 

@@ -86,7 +86,7 @@ services:
       GF_PLUGINS_PREINSTALL_DISABLED: "true"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/plugins:/var/lib/grafana/plugins:ro
+      - ./grafana/plugin-cache/4.20.0:/var/lib/grafana/plugins:ro
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro

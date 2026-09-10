@@ -6,6 +6,7 @@ export default tseslint.config(
     ignores: [
       "coverage/**",
       "dist/**",
+      "infra/grafana/plugin-cache/**",
       "infra/grafana/plugins/**",
       "node_modules/**",
       ".temp/**",

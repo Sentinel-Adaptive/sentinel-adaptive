@@ -2,12 +2,12 @@
 
 ## Current stage
 
-Stage 1 — Infrastructure smoke test
+Stage 1 — Infrastructure smoke test complete
 
 ## Overall
 
 - [x] Stage 0 — Bootstrap and compliance
-- [ ] Stage 1 — Infrastructure smoke test
+- [x] Stage 1 — Infrastructure smoke test
 - [ ] Stage 2 — Synthetic stream
 - [ ] Stage 3 — Detection and baseline
 - [ ] Stage 4 — ClickHouse, QoE, and Grafana
@@ -24,19 +24,18 @@ None.
 
 ## Last verified command
 
-`npm audit --audit-level=moderate`
+`npm run smoke:infra && npm run health`
 
 ## Last verified result
 
-Stage 0 passed `npm install`, typecheck, unit test, lint, compliance, hook, private-exclusion, and dependency-audit checks. The audit reported zero vulnerabilities.
+Kafka KRaft created, published, and consumed a real marker. ClickHouse persisted and queried a real row. Grafana loaded the pinned ClickHouse datasource and rendered provisioned data. Wazuh rule `100100` processed a Sentinel JSON incident and indexed the resulting alert. The unified health gate reported PASS for Kafka, ClickHouse, Grafana, and Wazuh.
 
 ## Next exact task
 
-Create the Stage 1A Kafka KRaft service and prove topic creation, publish, and consume locally.
+Begin Stage 2 by generating the deterministic synthetic DNS stream defined in the master build plan.
 
 ## Known risks
 
-- Wazuh resource footprint
 - QVAC local model load and performance
 - Windows Vulkan 1.4 support
 - End-to-end demo timing

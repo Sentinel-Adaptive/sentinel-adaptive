@@ -22,9 +22,11 @@
     "infra:config": "docker compose -f infra/docker-compose.yml config",
     "infra:plugins": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-grafana-plugin.ps1",
     "infra:certs": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-wazuh-certs.ps1",
+    "infra:runtime": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-wazuh-runtime.ps1",
+    "infra:prepare": "npm run infra:plugins && npm run infra:certs && npm run infra:runtime",
     "infra:up:core": "docker compose -f infra/docker-compose.yml up -d --wait kafka clickhouse",
     "infra:up:observability": "docker compose -f infra/docker-compose.yml up -d --wait kafka clickhouse grafana",
-    "infra:up": "docker compose -f infra/docker-compose.yml up -d --wait",
+    "infra:up": "npm run infra:prepare && docker compose -f infra/docker-compose.yml up -d --wait",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "smoke:infra": "node scripts/smoke-infra.mjs"
   },
