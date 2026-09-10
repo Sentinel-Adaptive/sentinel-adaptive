@@ -33,6 +33,7 @@
     "smoke:detection": "npm run smoke -w @sentinel-adaptive/agent",
     "smoke:qoe": "npm run smoke:qoe -w @sentinel-adaptive/agent",
     "smoke:wazuh": "npm run smoke:wazuh -w @sentinel-adaptive/agent",
+    "smoke:qvac": "npm run smoke:qvac -w @sentinel-adaptive/agent",
     "agent:consume": "npm run consume -w @sentinel-adaptive/agent",
     "demo:normal": "npm run generate -w @sentinel-adaptive/generator -- normal",
     "demo:beacon": "npm run generate -w @sentinel-adaptive/generator -- beacon",

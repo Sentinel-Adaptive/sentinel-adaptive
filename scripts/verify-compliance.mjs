@@ -115,11 +115,9 @@ for (const manifestPath of manifests) {
   }
 }
 
-if (qvacVersions.size > 0) {
-  for (const qvacPackage of ["@qvac/sdk", "@qvac/inference"]) {
-    if (qvacVersions.get(qvacPackage) !== "0.19.0") {
-      failures.push(`${qvacPackage} must be pinned exactly to 0.19.0`);
-    }
+for (const qvacPackage of ["@qvac/sdk", "@qvac/inference"]) {
+  if (qvacVersions.get(qvacPackage) !== "0.19.0") {
+    failures.push(`${qvacPackage} must be pinned exactly to 0.19.0`);
   }
 }
 
@@ -155,10 +153,6 @@ if (failures.length > 0) {
 } else {
   console.log("Sentinel compliance check: PASS");
   console.log(`Checked ${manifests.length} package manifests.`);
-  console.log(
-    qvacVersions.size === 0
-      ? "QVAC dependencies: deferred until Stage 6."
-      : "QVAC dependencies: pinned to 0.19.0.",
-  );
+  console.log("QVAC dependencies: pinned to 0.19.0.");
   console.log("Cloud AI dependencies, credentials, and endpoints: none found.");
 }

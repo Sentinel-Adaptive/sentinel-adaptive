@@ -14,6 +14,13 @@ export {
   defaultKafkaTopic,
 } from "./consumer.js";
 export {
+  assessAmbiguousSignals,
+  closeQvacRuntime,
+  createSdkRuntime,
+  qvacLocalOnly,
+  unloadQvacModel,
+} from "./qvac.js";
+export {
   defaultWazuhEventLog,
   emitWazuhIncidents,
   incidentIdForSignal,

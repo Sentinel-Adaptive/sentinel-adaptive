@@ -8,6 +8,7 @@ import {
   persistBucket,
   type ClickHouseSettings,
 } from "./clickhouse.js";
+import { assessAmbiguousSignals } from "./qvac.js";
 import { emitWazuhIncidents } from "./wazuh.js";
 
 export const defaultKafkaBroker = "localhost:9092";
@@ -20,6 +21,7 @@ export interface ConsumeStreamOptions {
   readonly fromBeginning?: boolean;
   readonly persist?: boolean;
   readonly emitWazuh?: boolean;
+  readonly assessQvac?: boolean;
   readonly clickhouse?: ClickHouseSettings;
   readonly onSignals?: (signals: readonly Signal[]) => void;
 }
@@ -31,6 +33,7 @@ export async function consumeDnsStream(
   const topic = options.topic ?? process.env.KAFKA_TOPIC ?? defaultKafkaTopic;
   const persist = options.persist ?? true;
   const emitWazuh = options.emitWazuh ?? true;
+  const assessQvac = options.assessQvac ?? true;
   const kafka = new Kafka({
     clientId: "sentinel-agent",
     brokers: [broker],
@@ -92,6 +95,24 @@ export async function consumeDnsStream(
               error instanceof Error ? error.message : error,
             );
           });
+        }
+        if (assessQvac) {
+          void assessAmbiguousSignals(signals)
+            .then((results) => {
+              for (const result of results) {
+                if (result.status === "invalid" || result.status === "unavailable") {
+                  console.error(
+                    `QVAC ${result.status} for signal ${result.signalId}`,
+                  );
+                }
+              }
+            })
+            .catch((error: unknown) => {
+              console.error(
+                "QVAC assess failed:",
+                error instanceof Error ? error.message : error,
+              );
+            });
         }
       }
     },
