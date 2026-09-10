@@ -44,7 +44,7 @@ All judged inference must execute locally through `@qvac/sdk` and `@qvac/inferen
 
 ## Failure behavior
 
-Kafka processing and deterministic metrics must continue if QVAC is unavailable or returns invalid JSON. Model output is schema-validated before persistence. Raw signals remain available after incident correlation. ClickHouse write failures are logged and must not stop Kafka consumption.
+Kafka processing and deterministic metrics must continue if QVAC is unavailable or returns invalid JSON. Model output is schema-validated before persistence. Raw signals remain available after incident correlation. ClickHouse write failures are logged and must not stop Kafka consumption. Wazuh log write failures are logged the same way.
 
 ## Transparent QoE
 
@@ -52,4 +52,4 @@ Site QoE is a weighted combination of availability (`1 - nxdomainRatio`), latenc
 
 ## Current implementation state
 
-Stages 0–4 are operational locally: infrastructure smoke, synthetic Kafka telemetry, QVAC-off detection with per-site baselines, challenge-dataset replay, ClickHouse persistence of DNS events and site windows, and a Grafana dashboard for transparent QoE. Wazuh incident emission, QVAC inference, correlation, and the UI remain later stages and must not be described as complete.
+Stages 0–5 are operational locally: infrastructure smoke, synthetic Kafka telemetry, QVAC-off detection with per-site baselines, challenge-dataset replay, ClickHouse persistence of DNS events and site windows, a Grafana dashboard for transparent QoE, and Wazuh ingestion of uncorrelated detection signals. QVAC inference, correlation, and the UI remain later stages and must not be described as complete.

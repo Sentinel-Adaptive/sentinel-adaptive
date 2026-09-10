@@ -92,3 +92,7 @@ qoeScore      = 0.45 × availability + 0.35 × latencyFactor + 0.20 × capacity
 
 The score is an explainable site-experience number. It is not a detection verdict, not a measured Ovnicom SLA, and not a customer-impact claim. For challenge-replay events, `latencyMs` and `saturation` remain Sentinel synthetic enrichment, so those QoE components are synthetic as well.
 
+## Wazuh emission
+
+Stage 5 appends one JSON line per newly observed Stage 3 signal to the local file Wazuh already monitors (`infra/wazuh/runtime/events.json`). The payload matches the Stage 1 `dns_security_incident` shape. `signal_count` is `1` and `incident_id` is a provisional identifier derived from `signalId`. These rows are not correlated incidents; Stage 7 will merge compatible signals. Wazuh rule `100100` remains the decoder.
+

@@ -61,15 +61,15 @@ Do not add QVAC, correlator logic, extra microservices, or a new Wazuh stack.
 
 ## Exact implementation tasks
 
-- [ ] Publish this persistent stage plan
-- [ ] Add a Wazuh incident event schema matching the monitored JSON fields
-- [ ] Map Stage 3 signals onto that schema without changing detection math
-- [ ] Append JSON lines to the existing monitored log
-- [ ] Wire emission into `consumeDnsStream` for newly seen signals
-- [ ] Add unit tests for mapping, provenance of `incident_id`, and JSONL writes
-- [ ] Add `npm run smoke:wazuh` that generates a DGA (or equivalent) signal, writes the log, and finds the alert in the Wazuh indexer
-- [ ] Keep generator, detection, QoE, health, and compliance checks passing
-- [ ] Update STATUS/ARCHITECTURE/DATA/README; commit and push; close the stage
+- [x] Publish this persistent stage plan
+- [x] Add a Wazuh incident event schema matching the monitored JSON fields
+- [x] Map Stage 3 signals onto that schema without changing detection math
+- [x] Append JSON lines to the existing monitored log
+- [x] Wire emission into `consumeDnsStream` for newly seen signals
+- [x] Add unit tests for mapping, provenance of `incident_id`, and JSONL writes
+- [x] Add `npm run smoke:wazuh` that generates a DGA (or equivalent) signal, writes the log, and finds the alert in the Wazuh indexer
+- [x] Keep generator, detection, QoE, health, and compliance checks passing
+- [x] Update STATUS/ARCHITECTURE/DATA/README; commit and push; close the stage
 
 ## Dependencies
 
@@ -129,4 +129,4 @@ npm run health
 
 ## Unresolved items
 
-None at plan creation.
+None. Live smoke indexed `INC-F9F2BA30A2FE4245` from an uncorrelated DGA signal.
