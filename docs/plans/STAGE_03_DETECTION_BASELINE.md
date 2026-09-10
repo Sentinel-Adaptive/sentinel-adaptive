@@ -16,15 +16,9 @@ Stage 2 can generate repeatable synthetic attacks. Stage 3 must prove that the s
 
 ## Current repository state
 
-Stage 2 is complete. The deterministic generator publishes schema-validated synthetic DNS events to the local `dns.telemetry` Kafka topic. Three fictional sites (`PTY-BANK-01`, `PTY-HEALTH-01`, `COL-GOV-01`) have deliberately different normal profiles.
+Stage 3 implementation is complete. Detection math lives in `packages/detection`, signal contracts are in `packages/contracts`, and `apps/agent` consumes `dns.telemetry` with QVAC disabled.
 
-No Stage 3 detection code exists yet:
-
-- `packages/detection` still exports a Stage 0 placeholder
-- `apps/agent` still exports a Stage 0 placeholder
-- `packages/contracts` currently defines only the DNS event schema
-
-QVAC, ClickHouse metric writes, Grafana QoE, Wazuh incident emission, and incident correlation are out of scope for this stage.
+QVAC, ClickHouse metric writes, Grafana QoE, Wazuh incident emission, and incident correlation remain out of scope for this stage.
 
 ## Files and components that will be created or modified
 
@@ -46,17 +40,17 @@ Modify:
 ## Exact implementation tasks
 
 - [x] Publish this persistent stage plan before detection code
-- [ ] Add Signal, evidence, and site-window contracts with tests
-- [ ] Implement entropy and domain-feature functions with unit tests
-- [ ] Implement rolling 10-second buckets, 45-bucket history, periodicity, NXDOMAIN ratio, and latency p50/p95
-- [ ] Implement per-site rolling mean/stddev baseline and explainable deviation scores
-- [ ] Prove the key test: identical current NXDOMAIN ratio yields a higher deviation on `PTY-BANK-01` than on `COL-GOV-01`
-- [ ] Implement deterministic rules for beaconing, tunneling, DGA, typosquatting, and baseline deviation
-- [ ] Emit Signal objects with score, severity hint, and non-empty evidence; keep `demo:normal` below high severity
-- [ ] Add `processEvents` pipeline that validates DNS events and updates in-memory site windows
-- [ ] Consume `dns.telemetry` from `apps/agent` with QVAC off
-- [ ] Add `npm run smoke:detection` proving live consume, normal stays non-high, and attacks produce typed evidence
-- [ ] Update STATUS and ARCHITECTURE; run acceptance commands; commit and push the completed stage
+- [x] Add Signal, evidence, and site-window contracts with tests
+- [x] Implement entropy and domain-feature functions with unit tests
+- [x] Implement rolling 10-second buckets, 45-bucket history, periodicity, NXDOMAIN ratio, and latency p50/p95
+- [x] Implement per-site rolling mean/stddev baseline and explainable deviation scores
+- [x] Prove the key test: identical current NXDOMAIN ratio yields a higher deviation on `PTY-BANK-01` than on `COL-GOV-01`
+- [x] Implement deterministic rules for beaconing, tunneling, DGA, typosquatting, and baseline deviation
+- [x] Emit Signal objects with score, severity hint, and non-empty evidence; keep `demo:normal` below high severity
+- [x] Add `processEvents` pipeline that validates DNS events and updates in-memory site windows
+- [x] Consume `dns.telemetry` from `apps/agent` with QVAC off
+- [x] Add `npm run smoke:detection` proving live consume, normal stays non-high, and attacks produce typed evidence
+- [x] Update STATUS and ARCHITECTURE; run acceptance commands; commit and push the completed stage
 
 ## Dependencies
 
@@ -121,4 +115,4 @@ npm run health
 
 ## Unresolved items
 
-None at plan creation.
+None.

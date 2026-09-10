@@ -45,4 +45,4 @@ Kafka processing and deterministic metrics must continue if QVAC is unavailable 
 
 ## Current implementation state
 
-Only Stage 0 scaffolding exists. The runtime flow shown above is planned and must not be represented as operational until later acceptance tests pass.
+Stages 0–3 are operational locally: infrastructure smoke, synthetic Kafka telemetry, and QVAC-off detection with per-site baselines and evidenced signals. ClickHouse QoE persistence, Wazuh incident emission, QVAC inference, correlation, and the UI remain later stages and must not be described as complete.

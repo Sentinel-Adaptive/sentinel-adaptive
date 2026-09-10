@@ -2,14 +2,14 @@
 
 ## Current stage
 
-Stage 2 — Synthetic streaming telemetry complete
+Stage 3 — Detection, baseline, and rules complete
 
 ## Overall
 
 - [x] Stage 0 — Bootstrap and compliance
 - [x] Stage 1 — Infrastructure smoke test
 - [x] Stage 2 — Synthetic stream
-- [ ] Stage 3 — Detection and baseline
+- [x] Stage 3 — Detection and baseline
 - [ ] Stage 4 — ClickHouse, QoE, and Grafana
 - [ ] Stage 5 — Wazuh integration
 - [ ] Stage 6 — QVAC load-bearing inference
@@ -24,15 +24,15 @@ None.
 
 ## Last verified command
 
-`npm run smoke:generator`
+`npm run smoke:detection`
 
 ## Last verified result
 
-The deterministic generator published and consumed 24 schema-validated synthetic DNS events through the local `dns.telemetry` Kafka topic. All eight scenarios are repeatable, explicitly tagged as synthetic, and cover three fictional sites with deliberately different normal profiles.
+The agent consumed live synthetic DNS events from `dns.telemetry`. Normal traffic did not emit high severity. DGA, tunnel, beacon, and typosquat scenarios produced typed deterministic signals with evidence. The same NXDOMAIN ratio scores as a larger deviation on `PTY-BANK-01` than on `COL-GOV-01`.
 
 ## Next exact task
 
-Begin Stage 3 with pure entropy and domain-feature functions plus unit tests.
+Begin Stage 4 by persisting site metrics, calculating transparent QoE, and wiring those values into the provisioned Grafana dashboard.
 
 ## Known risks
 
