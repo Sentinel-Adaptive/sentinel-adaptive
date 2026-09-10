@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const probeUrl = "https://example.com";
 const firewallScript = path.join(root, "scripts", "windows-offline-net.ps1");
-const blockedPrograms = collectBlockedPrograms();
 let isolationEnabled = false;
 
 try {
@@ -29,6 +28,7 @@ try {
 
   await enableOutboundIsolation();
   isolationEnabled = true;
+  await delay(1000);
 
   await assertPublicHttpsBlocked();
   console.log(`Isolation   PASS (${probeUrl} unreachable)`);
@@ -67,23 +67,6 @@ try {
       process.exitCode = 1;
     });
   }
-}
-
-function collectBlockedPrograms() {
-  const programs = [process.execPath];
-  const platformBare = {
-    "win32-x64": path.join(root, "node_modules", "bare-runtime-win32-x64", "bin", "bare.exe"),
-    "win32-arm64": path.join(root, "node_modules", "bare-runtime-win32-arm64", "bin", "bare.exe"),
-    "linux-x64": path.join(root, "node_modules", "bare-runtime-linux-x64", "bin", "bare"),
-    "linux-arm64": path.join(root, "node_modules", "bare-runtime-linux-arm64", "bin", "bare"),
-    "darwin-x64": path.join(root, "node_modules", "bare-runtime-darwin-x64", "bin", "bare"),
-    "darwin-arm64": path.join(root, "node_modules", "bare-runtime-darwin-arm64", "bin", "bare"),
-  };
-  const bare = platformBare[`${process.platform}-${process.arch}`];
-  if (bare && existsSync(bare)) {
-    programs.push(bare);
-  }
-  return programs;
 }
 
 function findCachedGguf() {
@@ -137,10 +120,7 @@ async function runFirewall(action) {
     os.tmpdir(),
     `sentinel-stage9-${process.pid}-${action}.json`,
   );
-  writeFileSync(
-    requestPath,
-    JSON.stringify({ Action: action, Programs: blockedPrograms }),
-  );
+  writeFileSync(requestPath, JSON.stringify({ Action: action }));
   try {
     const args = [
       "-NoProfile",
@@ -181,6 +161,12 @@ async function runFirewall(action) {
       // The request file is only a firewall argument payload.
     }
   }
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function runCommand(command, args, options = {}) {

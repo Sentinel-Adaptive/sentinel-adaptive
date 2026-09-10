@@ -33,7 +33,7 @@ Ambiguous QVAC on `INC-1AC334C9BD19C07D` is assessed locally (`status: ok`, `clo
 
 ## Next exact task
 
-Run `npm run smoke:offline` from an Administrator PowerShell so Windows Firewall can disable outbound internet for Node and the QVAC Bare worker, then close Stage 9 if the live local assessment succeeds.
+Re-run `npm run smoke:offline` from an Administrator PowerShell after the public-outbound firewall fix. Program-only Node/Bare blocks were not enough: the probe still received HTTP 200.
 
 ## Known risks
 

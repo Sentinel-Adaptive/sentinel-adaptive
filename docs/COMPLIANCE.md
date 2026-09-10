@@ -44,4 +44,4 @@ Stage 0 checks executable configuration and package manifests for prohibited clo
 
 ## Current status
 
-`npm run compliance` requires `@qvac/sdk` and `@qvac/inference` 0.19.0. Judged inference loads `LLAMA_3_2_1B_INST_Q4_0` in-process. Invalid or unavailable QVAC output does not stop Kafka consumption. DHT/provider APIs remain forbidden. After the catalog GGUF is on disk, `fallbackSrc` is that local file. `npm run smoke:offline` disables outbound internet for Node and the QVAC Bare worker, then re-runs a live local assessment.
+`npm run compliance` requires `@qvac/sdk` and `@qvac/inference` 0.19.0. Judged inference loads `LLAMA_3_2_1B_INST_Q4_0` in-process. Invalid or unavailable QVAC output does not stop Kafka consumption. DHT/provider APIs remain forbidden. After the catalog GGUF is on disk, `fallbackSrc` is that local file. `npm run smoke:offline` blocks public outbound internet, then re-runs a live local assessment.

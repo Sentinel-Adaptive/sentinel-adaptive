@@ -1,7 +1,6 @@
 param(
   [ValidateSet("add", "remove")]
   [string]$Action,
-  [string]$Programs = "",
   [string]$RequestPath = ""
 )
 
@@ -11,7 +10,6 @@ $rulePrefix = "SentinelAdaptive-Stage9-Offline"
 if ($RequestPath) {
   $request = Get-Content -LiteralPath $RequestPath -Raw | ConvertFrom-Json
   $Action = [string]$request.Action
-  $Programs = [string](@($request.Programs) -join ";")
 }
 
 if (-not $Action) {
@@ -38,28 +36,34 @@ if ($Action -eq "remove") {
   exit 0
 }
 
-$programPaths = @($Programs -split ";" | Where-Object { $_.Trim() -ne "" })
-if ($programPaths.Count -eq 0) {
-  Write-Output "At least one program path is required when adding rules."
-  exit 1
-}
-
 Remove-Stage9Rules
-$index = 0
-foreach ($path in $programPaths) {
-  if (-not (Test-Path -LiteralPath $path)) {
-    Write-Output "Program not found: $path"
-    exit 1
-  }
-  $index += 1
-  New-NetFirewallRule `
-    -DisplayName "$rulePrefix-$index" `
-    -Direction Outbound `
-    -Action Block `
-    -Program $path `
-    -Profile Any `
-    -Enabled True |
-    Out-Null
-}
 
-Write-Output "Added $($programPaths.Count) Stage 9 outbound block rule(s)."
+# Block public IPv4. Loopback, RFC1918, and link-local stay reachable so local
+# Docker/ClickHouse are not part of this cut. Program-only rules were not enough:
+# Node still reached the public probe host after those rules were added.
+New-NetFirewallRule `
+  -DisplayName "$rulePrefix-Internet4" `
+  -Direction Outbound `
+  -Action Block `
+  -RemoteAddress @(
+    "0.0.0.0-9.255.255.255",
+    "11.0.0.0-126.255.255.255",
+    "128.0.0.0-169.253.255.255",
+    "169.255.0.0-172.15.255.255",
+    "172.32.0.0-192.167.255.255",
+    "192.169.0.0-223.255.255.255"
+  ) `
+  -Profile Any `
+  -Enabled True |
+  Out-Null
+
+New-NetFirewallRule `
+  -DisplayName "$rulePrefix-Internet6" `
+  -Direction Outbound `
+  -Action Block `
+  -RemoteAddress "2000::/3" `
+  -Profile Any `
+  -Enabled True |
+  Out-Null
+
+Write-Output "Added Stage 9 public-outbound block rules."

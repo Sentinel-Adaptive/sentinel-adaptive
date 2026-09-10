@@ -20,7 +20,7 @@ Stages 0–8 are complete. `npm run compliance` pins QVAC 0.19.0 and scans for c
 - After the GGUF is local, `fallbackSrc` must be that file, not an HTTPS URL.
 - `npm run smoke:offline` must:
   1. fail if the local GGUF is missing (tell the operator to run `npm run smoke:qvac` once online);
-  2. disable outbound internet for Node and the QVAC Bare worker;
+  2. disable public outbound internet (loopback and RFC1918 stay reachable);
   3. prove a public HTTPS fetch fails;
   4. load the permitted model and assess one ambiguous evidence bundle;
   5. restore outbound rules even if the assessment fails.
@@ -62,9 +62,9 @@ Do not add extra microservices, a new UI, or Stage 10 submission assets.
 ## Risks
 
 - Outbound isolation needs Administrator rights
-- Blocking `node.exe` outbound affects every Node process until rules are removed
+- Public-outbound block rules affect every process until they are removed
 - 1B Q4_0 JSON can still be `invalid`; the smoke requires a validated assessment
-- A crash before teardown could leave the firewall rule in place
+- A crash before teardown could leave the firewall rules in place
 
 ## Fallback strategy
 
@@ -108,4 +108,4 @@ npm run health
 
 ## Unresolved items
 
-`npm run smoke:offline` is implemented and fail-closed without Administrator rights. This Cursor shell cannot apply Windows Firewall rules. The live disconnected QVAC proof still has to be run from an elevated terminal.
+An Administrator run added program-only Node/Bare block rules, but `https://example.com` still returned HTTP 200. Isolation now blocks public IPv4/IPv6 ranges for every process. Re-run `npm run smoke:offline` from an elevated terminal.
