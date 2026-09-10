@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Stage 9 — Offline and compliance proof complete
+Stage 10 — README, video, and submission (in progress)
 
 ## Overall
 
@@ -33,7 +33,7 @@ Public outbound isolation blocked `https://example.com`. Local `LLAMA_3_2_1B_INS
 
 ## Next exact task
 
-Begin Stage 10: update public documentation to match the running system, record a reproducible demonstration under five minutes, and verify the final repository.
+Publish the Stage 10 plan, rewrite the README for judges, add `docs/DEMO.md`, and add a repository submission check. The screen recording stays an operator step.
 
 ## Known risks
 
