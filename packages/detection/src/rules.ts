@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 
 import {
   signalSchema,
@@ -267,11 +267,16 @@ function createSignal(
   fields: Omit<Signal, "signalId" | "source" | "incidentId">,
 ): Signal {
   return signalSchema.parse({
-    signalId: randomUUID(),
+    signalId: uuidFromParts(fields.siteId, fields.type, fields.timestamp),
     source: "deterministic",
     incidentId: null,
     ...fields,
   });
+}
+
+function uuidFromParts(...parts: string[]): string {
+  const hex = createHash("sha1").update(parts.join("|")).digest("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
 function roundValue(value: number): number {

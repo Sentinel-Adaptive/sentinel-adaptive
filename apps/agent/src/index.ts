@@ -1,1 +1,5 @@
-export const agentStage = 0;
+export {
+  consumeDnsStream,
+  defaultKafkaBroker,
+  defaultKafkaTopic,
+} from "./consumer.js";

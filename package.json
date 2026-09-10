@@ -30,6 +30,8 @@
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "smoke:infra": "node scripts/smoke-infra.mjs",
     "smoke:generator": "npm run smoke -w @sentinel-adaptive/generator",
+    "smoke:detection": "npm run smoke -w @sentinel-adaptive/agent",
+    "agent:consume": "npm run consume -w @sentinel-adaptive/agent",
     "demo:normal": "npm run generate -w @sentinel-adaptive/generator -- normal",
     "demo:beacon": "npm run generate -w @sentinel-adaptive/generator -- beacon",
     "demo:tunnel": "npm run generate -w @sentinel-adaptive/generator -- tunnel",
