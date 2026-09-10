@@ -159,3 +159,31 @@ export const siteQoeSchema = z
   .strict();
 
 export type SiteQoe = z.infer<typeof siteQoeSchema>;
+
+export const wazuhClassifications = [
+  "possible_c2_beaconing",
+  "possible_dns_tunneling",
+  "possible_dga",
+  "possible_typosquatting",
+  "baseline_deviation",
+] as const;
+
+export const wazuhClassificationSchema = z.enum(wazuhClassifications);
+
+export const wazuhIncidentEventSchema = z
+  .object({
+    source: z.literal("sentinel-adaptive"),
+    event_type: z.literal("dns_security_incident"),
+    incident_id: z.string().min(1).max(64),
+    site_id: siteIdSchema,
+    classification: wazuhClassificationSchema,
+    severity: severityHintSchema,
+    confidence: z.number().min(0).max(1),
+    signal_count: z.number().int().positive(),
+    summary: z.string().min(1).max(500),
+    signal_id: z.string().uuid(),
+  })
+  .strict();
+
+export type WazuhClassification = z.infer<typeof wazuhClassificationSchema>;
+export type WazuhIncidentEvent = z.infer<typeof wazuhIncidentEventSchema>;

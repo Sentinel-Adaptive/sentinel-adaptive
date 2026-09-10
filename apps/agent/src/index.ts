@@ -13,3 +13,9 @@ export {
   defaultKafkaBroker,
   defaultKafkaTopic,
 } from "./consumer.js";
+export {
+  defaultWazuhEventLog,
+  emitWazuhIncidents,
+  incidentIdForSignal,
+  toWazuhIncidentEvent,
+} from "./wazuh.js";

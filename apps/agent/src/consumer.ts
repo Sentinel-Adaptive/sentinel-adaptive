@@ -8,6 +8,7 @@ import {
   persistBucket,
   type ClickHouseSettings,
 } from "./clickhouse.js";
+import { emitWazuhIncidents } from "./wazuh.js";
 
 export const defaultKafkaBroker = "localhost:9092";
 export const defaultKafkaTopic = "dns.telemetry";
@@ -18,6 +19,7 @@ export interface ConsumeStreamOptions {
   readonly groupId?: string;
   readonly fromBeginning?: boolean;
   readonly persist?: boolean;
+  readonly emitWazuh?: boolean;
   readonly clickhouse?: ClickHouseSettings;
   readonly onSignals?: (signals: readonly Signal[]) => void;
 }
@@ -28,6 +30,7 @@ export async function consumeDnsStream(
   const broker = options.broker ?? process.env.KAFKA_BROKER ?? defaultKafkaBroker;
   const topic = options.topic ?? process.env.KAFKA_TOPIC ?? defaultKafkaTopic;
   const persist = options.persist ?? true;
+  const emitWazuh = options.emitWazuh ?? true;
   const kafka = new Kafka({
     clientId: "sentinel-agent",
     brokers: [broker],
@@ -82,6 +85,14 @@ export async function consumeDnsStream(
       });
       if (signals.length > 0) {
         options.onSignals?.(signals);
+        if (emitWazuh) {
+          void emitWazuhIncidents(signals).catch((error: unknown) => {
+            console.error(
+              "Wazuh emit failed:",
+              error instanceof Error ? error.message : error,
+            );
+          });
+        }
       }
     },
   });

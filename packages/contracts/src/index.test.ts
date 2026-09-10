@@ -5,6 +5,7 @@ import {
   signalSchema,
   siteQoeSchema,
   siteWindowMetricsSchema,
+  wazuhIncidentEventSchema,
 } from "./index.js";
 
 const validEvent = {
@@ -153,5 +154,24 @@ describe("siteQoeSchema", () => {
     };
 
     expect(siteQoeSchema.parse(qoe)).toEqual(qoe);
+  });
+});
+
+describe("wazuhIncidentEventSchema", () => {
+  it("accepts the monitored JSON incident shape", () => {
+    const event = {
+      source: "sentinel-adaptive",
+      event_type: "dns_security_incident",
+      incident_id: "INC-1111111111114111",
+      site_id: "PTY-BANK-01",
+      classification: "possible_dga",
+      severity: "high",
+      confidence: 0.86,
+      signal_count: 1,
+      summary: "Deterministic dga signal on PTY-BANK-01: many generated-looking names fail to resolve",
+      signal_id: "11111111-1111-4111-8111-111111111111",
+    };
+
+    expect(wazuhIncidentEventSchema.parse(event)).toEqual(event);
   });
 });
