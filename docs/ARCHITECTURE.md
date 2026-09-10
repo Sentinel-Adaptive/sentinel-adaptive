@@ -60,4 +60,4 @@ Compatible Stage 3 signals on the same site inside the same aligned 60-second wi
 
 ## Current implementation state
 
-Stages 0–8 are operational locally: infrastructure smoke, synthetic Kafka telemetry, per-site detection baselines, challenge-dataset replay, ClickHouse persistence of DNS events, site windows, incidents, member signals, and QVAC results, a Grafana dashboard for transparent QoE, Wazuh ingestion of correlated incidents, local QVAC assessment of ambiguous evidenced candidates, and a presentation-only operator UI against the local API.
+Stages 0–9 are operational locally: infrastructure smoke, synthetic Kafka telemetry, per-site detection baselines, challenge-dataset replay, ClickHouse persistence of DNS events, site windows, incidents, member signals, and QVAC results, a Grafana dashboard for transparent QoE, Wazuh ingestion of correlated incidents, local QVAC assessment of ambiguous evidenced candidates, a presentation-only operator UI against the local API, and an offline proof that live QVAC still assesses after public outbound internet is disabled.

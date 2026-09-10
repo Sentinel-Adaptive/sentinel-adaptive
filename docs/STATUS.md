@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Stage 9 — Offline and compliance proof (in progress)
+Stage 9 — Offline and compliance proof complete
 
 ## Overall
 
@@ -16,7 +16,7 @@ Stage 9 — Offline and compliance proof (in progress)
 - [x] Stage 6 — QVAC load-bearing inference
 - [x] Stage 7 — Incident correlation
 - [x] Stage 8 — Sentinel professional UI
-- [ ] Stage 9 — Offline and compliance proof
+- [x] Stage 9 — Offline and compliance proof
 - [ ] Stage 10 — README, video, and submission
 
 ## Current blockers
@@ -25,15 +25,15 @@ None.
 
 ## Last verified command
 
-`GET /api/overview` and `GET /api/incidents/INC-1AC334C9BD19C07D` through the restarted operator API and Vite proxy
+`npm run smoke:offline` (Administrator PowerShell)
 
 ## Last verified result
 
-Ambiguous QVAC on `INC-1AC334C9BD19C07D` is assessed locally (`status: ok`, `cloudInference: false`). The 1B model had stuffed a lone `high` token into `rationale`; the schema now accepts optional `confidence` and requires a sentence-length `rationale`. The persisted result is `consistent` / `confidence: medium` with the model's own sentence in `rationale`. Incident Detail maps that token to Confidence and the sentence to Explanation. Overview QoE from ClickHouse is `PTY-BANK-01` 0.956, `PTY-HEALTH-01` 0.8827, `COL-GOV-01` 0.746.
+Public outbound isolation blocked `https://example.com`. Local `LLAMA_3_2_1B_INST_Q4_0` loaded from `~\.qvac\models\` and returned a schema-valid `consistent` assessment. Firewall rules were removed after the run. Compliance still pins `@qvac/sdk` and `@qvac/inference` 0.19.0 with no cloud inference path.
 
 ## Next exact task
 
-Re-run `npm run smoke:offline` from an Administrator PowerShell after the public-outbound firewall fix. Program-only Node/Bare blocks were not enough: the probe still received HTTP 200.
+Begin Stage 10: update public documentation to match the running system, record a reproducible demonstration under five minutes, and verify the final repository.
 
 ## Known risks
 

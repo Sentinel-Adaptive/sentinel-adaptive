@@ -43,7 +43,7 @@ flowchart LR
 
 ## Current status
 
-Stages 0–8 are complete locally: infrastructure smoke, synthetic Kafka scenarios, detection, Ovnicom challenge replay, ClickHouse QoE, local QVAC assessment of ambiguous candidates, correlated incidents emitted to Wazuh and ClickHouse, and a presentation-only operator UI against the local agent API.
+Stages 0–9 are complete locally: infrastructure smoke, synthetic Kafka scenarios, detection, Ovnicom challenge replay, ClickHouse QoE, local QVAC assessment of ambiguous candidates, correlated incidents emitted to Wazuh and ClickHouse, a presentation-only operator UI against the local agent API, and an offline proof that judged inference still runs after public outbound internet is disabled.
 
 See [the build plan](docs/BUILD_PLAN.md), [current status](docs/STATUS.md), [data sources](docs/DATA.md), and [compliance boundary](docs/COMPLIANCE.md).
 

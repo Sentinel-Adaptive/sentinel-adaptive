@@ -50,8 +50,8 @@ Do not add extra microservices, a new UI, or Stage 10 submission assets.
 - [x] Publish this persistent stage plan
 - [x] Resolve cached `LLAMA_3_2_1B_INST_Q4_0` GGUF and use it as `fallbackSrc` when present
 - [x] Add `npm run smoke:offline` that isolates outbound internet and runs live local QVAC
-- [ ] Keep typecheck, lint, unit tests, compliance, and health passing
-- [ ] Update STATUS/ARCHITECTURE/COMPLIANCE/README; commit and push; close the stage
+- [x] Keep typecheck, lint, unit tests, compliance, and health passing
+- [x] Update STATUS/ARCHITECTURE/COMPLIANCE/README; commit and push; close the stage
 
 ## Dependencies
 
@@ -108,4 +108,4 @@ npm run health
 
 ## Unresolved items
 
-An Administrator run added program-only Node/Bare block rules, but `https://example.com` still returned HTTP 200. Isolation now blocks public IPv4/IPv6 ranges for every process. Re-run `npm run smoke:offline` from an elevated terminal.
+None. Program-only Node/Bare block rules were not sufficient on this host; the passing proof uses public IPv4/IPv6 outbound block rules and restores them after the run.
