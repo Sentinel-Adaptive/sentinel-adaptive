@@ -10,7 +10,7 @@ Stages 3–6 already produce evidenced signals, optional QVAC assessments, and o
 
 ## Current repository state
 
-Stages 0–6 are complete. `Signal.incidentId` is always `null`. Wazuh uses a provisional `INC-` value derived from `signalId` with `signal_count: 1`. ClickHouse stores DNS events and site windows only. There is no incident contract or correlator.
+Stages 0–7 are complete. Compatible same-site signals in a 60-second window share a durable `incidentId`. Wazuh and ClickHouse receive correlated incidents. Raw detection signals still leave `incidentId` null until the correlator assigns copies.
 
 ## Correlation policy
 
@@ -54,15 +54,15 @@ Do not add REST/SSE, the React UI, extra microservices, or cloud AI.
 
 ## Exact implementation tasks
 
-- [ ] Publish this persistent stage plan
-- [ ] Add the incident contract and allow `Signal.incidentId` to be set after correlation
-- [ ] Implement a pure site+window correlator with unit tests, including a combined multi-type merge and a cross-site split
-- [ ] Keep raw member signals and evidence
-- [ ] Map correlated incidents onto the existing Wazuh JSON contract
-- [ ] Persist incidents to ClickHouse without blocking Kafka on failure
-- [ ] Wire correlation into `consumeDnsStream` before Wazuh emission
-- [ ] Add `npm run smoke:correlation` that correlates a same-site combined scenario, writes Wazuh, and finds the incident id in the indexer
-- [ ] Update STATUS/ARCHITECTURE/DATA/README; commit and push; close the stage
+- [x] Publish this persistent stage plan
+- [x] Add the incident contract and allow `Signal.incidentId` to be set after correlation
+- [x] Implement a pure site+window correlator with unit tests, including a combined multi-type merge and a cross-site split
+- [x] Keep raw member signals and evidence
+- [x] Map correlated incidents onto the existing Wazuh JSON contract
+- [x] Persist incidents to ClickHouse without blocking Kafka on failure
+- [x] Wire correlation into `consumeDnsStream` before Wazuh emission
+- [x] Add `npm run smoke:correlation` that correlates a same-site combined scenario, writes Wazuh, and finds the incident id in the indexer
+- [x] Update STATUS/ARCHITECTURE/DATA/README; commit and push; close the stage
 
 ## Dependencies
 
@@ -123,4 +123,4 @@ npm run health
 
 ## Unresolved items
 
-None at plan creation.
+Mixed `demo:combined` Kafka streams can dilute individual Stage 3 rules, so the live smoke correlates independently generated DGA and beacon signals on one site. The beacon generator uses 15-second spacing; four events stay inside one 60-second window, while six events can cross it. REST/SSE for the operator UI remains Stage 8.

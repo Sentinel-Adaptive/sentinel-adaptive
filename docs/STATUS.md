@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Stage 6 — QVAC load-bearing inference complete
+Stage 7 — Incident correlation complete
 
 ## Overall
 
@@ -14,7 +14,7 @@ Stage 6 — QVAC load-bearing inference complete
 - [x] Stage 4 — ClickHouse, QoE, and Grafana
 - [x] Stage 5 — Wazuh integration
 - [x] Stage 6 — QVAC load-bearing inference
-- [ ] Stage 7 — Incident correlation
+- [x] Stage 7 — Incident correlation
 - [ ] Stage 8 — Sentinel professional UI
 - [ ] Stage 9 — Offline and compliance proof
 - [ ] Stage 10 — README, video, and submission
@@ -25,19 +25,20 @@ None.
 
 ## Last verified command
 
-`npm run smoke:qvac`
+`npm run smoke:correlation`
 
 ## Last verified result
 
-Local `@qvac/sdk` 0.19.0 loaded `LLAMA_3_2_1B_INST_Q4_0`. A handcrafted ambiguous signal (score 0.68) produced a schema-valid `insufficient_evidence` assessment. A high-confidence DGA signal was skipped. Invalid JSON and a missing-model path returned `invalid` / `unavailable` without throwing. Deterministic `source` and `incidentId: null` were unchanged.
+Independently evidenced DGA and beaconing signals on `PTY-BANK-01` in the same 60-second window merged into incident `INC-1B41EDF624D62463` with `signal_count` 2. ClickHouse stored that count. Wazuh indexed the correlated `incident_id`. Raw detection signals kept `incidentId` null until the correlator assigned copies.
 
 ## Next exact task
 
-Begin Stage 7 by correlating compatible signals into incidents without deleting raw evidence, and attach a durable `incidentId` for Wazuh and later UI use.
+Begin Stage 8 by building the professional operator UI (Overview, Incidents, Incident Detail, Site Detail, System/Sovereignty) against real local API data.
 
 ## Known risks
 
 - First QVAC model download can take several minutes
 - Windows registry file locking may require the catalog GGUF `fallbackSrc`
-- Windows Vulkan 1.4 / GPU probe issues; CPU inference is used (`gpu_layers: 0`)
+- Mixed `demo:combined` traffic can dilute per-rule evidence; correlation smoke uses independently generated same-site attacks
+- Beacon generator spacing is 15s, so a 6-event beacon crosses a 60s window
 - End-to-end demo timing

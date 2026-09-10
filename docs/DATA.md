@@ -94,5 +94,9 @@ The score is an explainable site-experience number. It is not a detection verdic
 
 ## Wazuh emission
 
-Stage 5 appends one JSON line per newly observed Stage 3 signal to the local file Wazuh already monitors (`infra/wazuh/runtime/events.json`). The payload matches the Stage 1 `dns_security_incident` shape. `signal_count` is `1` and `incident_id` is a provisional identifier derived from `signalId`. These rows are not correlated incidents; Stage 7 will merge compatible signals. Wazuh rule `100100` remains the decoder.
+The agent appends one JSON line per correlated incident to the local file Wazuh already monitors (`infra/wazuh/runtime/events.json`). The payload matches the Stage 1 `dns_security_incident` shape. `incident_id` is the durable correlated identifier. `signal_count` is the number of member signals. `signal_id` is the highest-score member. Wazuh rule `100100` remains the decoder.
+
+## Incident correlation
+
+Signals on the same fictional site inside the same aligned 60-second window are merged. Raw Stage 3 objects keep `incidentId: null`; the correlator returns copies with the durable id. Mixed `demo:combined` streams can dilute individual rules, so correlation proofs use independently generated same-site DGA and beacon scenarios whose timestamps fit one window.
 

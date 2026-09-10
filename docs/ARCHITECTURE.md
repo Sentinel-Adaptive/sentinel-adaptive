@@ -44,12 +44,16 @@ All judged inference must execute locally through `@qvac/sdk` and `@qvac/inferen
 
 ## Failure behavior
 
-Kafka processing and deterministic metrics must continue if QVAC is unavailable or returns invalid JSON. Model output is schema-validated before use. Raw signals remain available after incident correlation. ClickHouse write failures are logged and must not stop Kafka consumption. Wazuh log write failures and QVAC assessment failures are logged the same way.
+Kafka processing and deterministic metrics must continue if QVAC is unavailable or returns invalid JSON. Model output is schema-validated before use. Raw signals remain available after incident correlation. ClickHouse write failures are logged and must not stop Kafka consumption. Wazuh log write failures, incident persist failures, and QVAC assessment failures are logged the same way.
 
 ## Transparent QoE
 
 Site QoE is a weighted combination of availability (`1 - nxdomainRatio`), latency versus that site's own p95 baseline, and unused capacity (`1 - saturation`). Weights are 0.45 / 0.35 / 0.20. The score is stored with its components in ClickHouse and shown on the provisioned Grafana dashboard `sentinel-site-qoe`. It is not a detection score.
 
+## Incident correlation
+
+Compatible Stage 3 signals on the same site inside the same aligned 60-second window share one `incidentId`. Member signals keep their evidence. Threat type and entity are recorded on the incident; they are not extra merge partitions. Wazuh receives one `dns_security_incident` line per incident. ClickHouse table `sentinel.incidents` stores the latest member list.
+
 ## Current implementation state
 
-Stages 0–6 are operational locally: infrastructure smoke, synthetic Kafka telemetry, per-site detection baselines, challenge-dataset replay, ClickHouse persistence of DNS events and site windows, a Grafana dashboard for transparent QoE, Wazuh ingestion of uncorrelated detection signals, and local QVAC assessment of ambiguous evidenced candidates. Incident correlation and the UI remain later stages and must not be described as complete.
+Stages 0–7 are operational locally: infrastructure smoke, synthetic Kafka telemetry, per-site detection baselines, challenge-dataset replay, ClickHouse persistence of DNS events, site windows, and incidents, a Grafana dashboard for transparent QoE, Wazuh ingestion of correlated incidents, and local QVAC assessment of ambiguous evidenced candidates. The operator UI remains a later stage and must not be described as complete.

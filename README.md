@@ -43,7 +43,7 @@ flowchart LR
 
 ## Current status
 
-Stages 0–6 are complete locally: infrastructure smoke, synthetic Kafka scenarios, detection, Ovnicom challenge replay, ClickHouse QoE, Wazuh ingestion of uncorrelated detection signals, and local QVAC assessment of ambiguous evidenced candidates. Incident correlation and the operator UI remain later stages and must not be described as complete.
+Stages 0–7 are complete locally: infrastructure smoke, synthetic Kafka scenarios, detection, Ovnicom challenge replay, ClickHouse QoE, local QVAC assessment of ambiguous candidates, and correlated incidents emitted to Wazuh and ClickHouse. The operator UI remains a later stage and must not be described as complete.
 
 See [the build plan](docs/BUILD_PLAN.md), [current status](docs/STATUS.md), [data sources](docs/DATA.md), and [compliance boundary](docs/COMPLIANCE.md).
 
@@ -55,6 +55,7 @@ npm run smoke:ovnicom
 npm run smoke:qoe
 npm run smoke:wazuh
 npm run smoke:qvac
+npm run smoke:correlation
 ```
 
 ## Development
