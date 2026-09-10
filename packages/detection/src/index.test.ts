@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { detectionStage } from "./index.js";
+import { extractDomainFeatures, shannonEntropy } from "./index.js";
 
-describe("Stage 0 test harness", () => {
-  it("loads the detection workspace", () => {
-    expect(detectionStage).toBe(0);
+describe("detection public exports", () => {
+  it("exposes entropy and domain-feature helpers", () => {
+    expect(shannonEntropy("abab")).toBe(1);
+    expect(extractDomainFeatures("a.example.test").labelCount).toBe(3);
   });
 });

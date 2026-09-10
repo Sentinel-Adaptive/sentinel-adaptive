@@ -52,3 +52,60 @@ export const dnsEventSchema = z
 export type DnsEvent = z.infer<typeof dnsEventSchema>;
 export type ScenarioTag = z.infer<typeof scenarioTagSchema>;
 export type SiteId = z.infer<typeof siteIdSchema>;
+
+export const signalTypes = [
+  "beaconing",
+  "tunneling",
+  "dga",
+  "typosquatting",
+  "baseline_deviation",
+] as const;
+
+export const severityHints = ["low", "medium", "high"] as const;
+
+export const signalTypeSchema = z.enum(signalTypes);
+export const severityHintSchema = z.enum(severityHints);
+
+export const evidenceItemSchema = z
+  .object({
+    metric: z.string().min(1),
+    value: z.union([z.number(), z.string(), z.boolean()]),
+    reason: z.string().min(1),
+  })
+  .strict();
+
+export const signalSchema = z
+  .object({
+    signalId: z.string().uuid(),
+    timestamp: z.iso.datetime({ offset: true }),
+    siteId: siteIdSchema,
+    type: signalTypeSchema,
+    score: z.number().min(0).max(1),
+    severityHint: severityHintSchema,
+    evidence: z.array(evidenceItemSchema).min(1),
+    source: z.literal("deterministic"),
+    incidentId: z.null(),
+  })
+  .strict();
+
+export const siteWindowMetricsSchema = z
+  .object({
+    bucketStart: z.iso.datetime({ offset: true }),
+    siteId: siteIdSchema,
+    queryCount: z.number().int().nonnegative(),
+    nxdomainCount: z.number().int().nonnegative(),
+    nxdomainRatio: z.number().min(0).max(1),
+    latencyMedian: z.number().nonnegative(),
+    latencyP95: z.number().nonnegative(),
+    uniqueDomains: z.number().int().nonnegative(),
+    meanEntropy: z.number().nonnegative(),
+    periodicityScore: z.number().min(0).max(1),
+    saturation: z.number().min(0).max(1),
+  })
+  .strict();
+
+export type EvidenceItem = z.infer<typeof evidenceItemSchema>;
+export type Signal = z.infer<typeof signalSchema>;
+export type SignalType = z.infer<typeof signalTypeSchema>;
+export type SeverityHint = z.infer<typeof severityHintSchema>;
+export type SiteWindowMetrics = z.infer<typeof siteWindowMetricsSchema>;
