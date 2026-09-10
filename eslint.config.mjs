@@ -5,6 +5,7 @@ export default tseslint.config(
   {
     ignores: [
       "coverage/**",
+      "**/dist/**",
       "dist/**",
       "infra/grafana/plugin-cache/**",
       "infra/grafana/plugins/**",
@@ -25,6 +26,8 @@ export default tseslint.config(
         console: "readonly",
         fetch: "readonly",
         process: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
       },
     },
   },
