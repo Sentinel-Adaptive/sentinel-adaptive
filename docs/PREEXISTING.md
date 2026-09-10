@@ -16,6 +16,7 @@ Standard dependencies are declared in package manifests and Docker configuration
 - Grafana ClickHouse datasource plugin `4.20.0` is downloaded from the official `grafana/clickhouse-datasource` release during local setup; the binary is not committed.
 - The Stage 1 Grafana smoke dashboard is project-authored and not imported from a template.
 - The Stage 4 Grafana site QoE dashboard is project-authored and not imported from a template.
+- The Stage 8 operator UI is project-authored Vite + React + Tailwind CSS with locally bundled IBM Plex Sans (`@fontsource/ibm-plex-sans` 5.3.0). It is not a shadcn dashboard template.
 
 Any generated shadcn components, additional imported dashboards, starters, or templates must be listed here when introduced.
 

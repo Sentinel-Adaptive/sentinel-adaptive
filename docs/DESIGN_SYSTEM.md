@@ -27,7 +27,7 @@ Orange represents product identity and action. Red is reserved for danger.
 
 ## Typography and layout
 
-- Use a locally bundled open professional sans such as Geist Sans or IBM Plex Sans.
+- Use a locally bundled open professional sans such as IBM Plex Sans (`@fontsource/ibm-plex-sans` in `apps/web`).
 - Use tabular numerals for metrics.
 - Design for 1440 by 900 and preserve the judged flow at 1280 by 720.
 - Use a charcoal sidebar, off-white main canvas, restrained radii, subtle one-pixel borders, and little or no shadow.

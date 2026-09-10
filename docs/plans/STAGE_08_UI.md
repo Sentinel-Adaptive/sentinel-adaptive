@@ -55,15 +55,15 @@ Do not add cloud AI, extra microservices, DHT/provider APIs, or Stage 9 offline 
 
 ## Exact implementation tasks
 
-- [ ] Publish this persistent stage plan
-- [ ] Persist member signals and QVAC results for UI reads
-- [ ] Add operator API contracts and a local HTTP/SSE server in `apps/agent`
-- [ ] Serve overview, incidents, incident detail, site detail, and system payloads from real local data
-- [ ] Scaffold `apps/web` with Vite, React, locally bundled IBM Plex Sans, and design tokens
-- [ ] Implement the five operator views against the API, including empty and error states
-- [ ] Add `npm run smoke:ui` that seeds local data, queries the API, and checks the five routes
-- [ ] Keep typecheck, lint, unit tests, compliance, and health passing
-- [ ] Update STATUS/ARCHITECTURE/README/PREEXISTING; commit and push; close the stage
+- [x] Publish this persistent stage plan
+- [x] Persist member signals and QVAC results for UI reads
+- [x] Add operator API contracts and a local HTTP/SSE server in `apps/agent`
+- [x] Serve overview, incidents, incident detail, site detail, and system payloads from real local data
+- [x] Scaffold `apps/web` with Vite, React, locally bundled IBM Plex Sans, and design tokens
+- [x] Implement the five operator views against the API, including empty and error states
+- [x] Add `npm run smoke:ui` that seeds local data, queries the API, and checks the five routes
+- [x] Keep typecheck, lint, unit tests, compliance, and health passing
+- [x] Update STATUS/ARCHITECTURE/README/PREEXISTING; commit and push; close the stage
 
 ## Dependencies
 
@@ -122,4 +122,4 @@ npm run health
 
 ## Unresolved items
 
-None at plan creation.
+Operator views were verified with `npm run smoke:ui` (live local API plus Vite preview of the five routes). This session did not click-test the UI in a browser.

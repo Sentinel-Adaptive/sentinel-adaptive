@@ -52,8 +52,12 @@ Site QoE is a weighted combination of availability (`1 - nxdomainRatio`), latenc
 
 ## Incident correlation
 
-Compatible Stage 3 signals on the same site inside the same aligned 60-second window share one `incidentId`. Member signals keep their evidence. Threat type and entity are recorded on the incident; they are not extra merge partitions. Wazuh receives one `dns_security_incident` line per incident. ClickHouse table `sentinel.incidents` stores the latest member list.
+Compatible Stage 3 signals on the same site inside the same aligned 60-second window share one `incidentId`. Member signals keep their evidence. Threat type and entity are recorded on the incident; they are not extra merge partitions. Wazuh receives one `dns_security_incident` line per incident. ClickHouse tables `sentinel.incidents`, `sentinel.signals`, and `sentinel.qvac_results` store the latest incident, member evidence, and optional QVAC rows.
+
+## Operator UI
+
+`apps/agent` owns `GET /api/system`, `/api/overview`, `/api/incidents`, `/api/incidents/:id`, `/api/sites/:siteId`, and SSE `/api/events` on `SENTINEL_API_PORT` (default 3001). `apps/web` is a Vite/React presentation layer: it fetches those payloads and renders Overview, Incidents, Incident Detail, Site Detail, and System. It does not run detection math. Empty states report missing local data instead of placeholder metrics.
 
 ## Current implementation state
 
-Stages 0–7 are operational locally: infrastructure smoke, synthetic Kafka telemetry, per-site detection baselines, challenge-dataset replay, ClickHouse persistence of DNS events, site windows, and incidents, a Grafana dashboard for transparent QoE, Wazuh ingestion of correlated incidents, and local QVAC assessment of ambiguous evidenced candidates. The operator UI remains a later stage and must not be described as complete.
+Stages 0–8 are operational locally: infrastructure smoke, synthetic Kafka telemetry, per-site detection baselines, challenge-dataset replay, ClickHouse persistence of DNS events, site windows, incidents, member signals, and QVAC results, a Grafana dashboard for transparent QoE, Wazuh ingestion of correlated incidents, local QVAC assessment of ambiguous evidenced candidates, and a presentation-only operator UI against the local API.

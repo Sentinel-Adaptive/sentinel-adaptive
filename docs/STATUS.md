@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Stage 7 — Incident correlation complete
+Stage 8 — Sentinel professional UI complete
 
 ## Overall
 
@@ -15,7 +15,7 @@ Stage 7 — Incident correlation complete
 - [x] Stage 5 — Wazuh integration
 - [x] Stage 6 — QVAC load-bearing inference
 - [x] Stage 7 — Incident correlation
-- [ ] Stage 8 — Sentinel professional UI
+- [x] Stage 8 — Sentinel professional UI
 - [ ] Stage 9 — Offline and compliance proof
 - [ ] Stage 10 — README, video, and submission
 
@@ -25,15 +25,15 @@ None.
 
 ## Last verified command
 
-`npm run smoke:correlation`
+`npm run smoke:ui`
 
 ## Last verified result
 
-Independently evidenced DGA and beaconing signals on `PTY-BANK-01` in the same 60-second window merged into incident `INC-1B41EDF624D62463` with `signal_count` 2. ClickHouse stored that count. Wazuh indexed the correlated `incident_id`. Raw detection signals kept `incidentId` null until the correlator assigned copies.
+Local operator API served system, overview, incidents, incident detail, and site payloads from ClickHouse plus the live store. Seeded DGA + beacon members on `PTY-BANK-01` returned as `INC-1B41EDF624D62463` with evidence rows. Vite preview returned HTTP 200 for `/`, `/incidents`, `/incidents/:id`, `/sites/PTY-BANK-01`, and `/system`. System payload pinned local QVAC 0.19.0 and `cloudInference: false`.
 
 ## Next exact task
 
-Begin Stage 8 by building the professional operator UI (Overview, Incidents, Incident Detail, Site Detail, System/Sovereignty) against real local API data.
+Begin Stage 9 by proving the judged path still runs locally after model availability with outbound internet disabled.
 
 ## Known risks
 
@@ -41,4 +41,5 @@ Begin Stage 8 by building the professional operator UI (Overview, Incidents, Inc
 - Windows registry file locking may require the catalog GGUF `fallbackSrc`
 - Mixed `demo:combined` traffic can dilute per-rule evidence; correlation smoke uses independently generated same-site attacks
 - Beacon generator spacing is 15s, so a 6-event beacon crosses a 60s window
+- Incidents persisted before Stage 8 may lack ClickHouse member evidence until new traffic is processed
 - End-to-end demo timing

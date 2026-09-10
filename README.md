@@ -43,7 +43,7 @@ flowchart LR
 
 ## Current status
 
-Stages 0–7 are complete locally: infrastructure smoke, synthetic Kafka scenarios, detection, Ovnicom challenge replay, ClickHouse QoE, local QVAC assessment of ambiguous candidates, and correlated incidents emitted to Wazuh and ClickHouse. The operator UI remains a later stage and must not be described as complete.
+Stages 0–8 are complete locally: infrastructure smoke, synthetic Kafka scenarios, detection, Ovnicom challenge replay, ClickHouse QoE, local QVAC assessment of ambiguous candidates, correlated incidents emitted to Wazuh and ClickHouse, and a presentation-only operator UI against the local agent API.
 
 See [the build plan](docs/BUILD_PLAN.md), [current status](docs/STATUS.md), [data sources](docs/DATA.md), and [compliance boundary](docs/COMPLIANCE.md).
 
@@ -56,6 +56,14 @@ npm run smoke:qoe
 npm run smoke:wazuh
 npm run smoke:qvac
 npm run smoke:correlation
+npm run smoke:ui
+```
+
+Operator UI (local API on port 3001, Vite dev server on 5173):
+
+```bash
+npm run agent:serve
+npm run web:dev
 ```
 
 ## Development
