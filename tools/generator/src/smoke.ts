@@ -112,13 +112,22 @@ try {
       "--timeout-ms",
       "15000",
     ]);
-    received.push(
-      ...output
-        .trim()
-        .split(/\r?\n/)
-        .filter(Boolean)
-        .map((line) => dnsEventSchema.parse(JSON.parse(line))),
-    );
+    for (const line of output.trim().split(/\r?\n/).filter(Boolean)) {
+      let value: unknown;
+      try {
+        value = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      const parsed = dnsEventSchema.safeParse(value);
+      if (
+        parsed.success &&
+        parsed.data.scenarioTag === "combined" &&
+        parsed.data.generator.seed === seed
+      ) {
+        received.push(parsed.data);
+      }
+    }
   }
 
   if (received.length !== count) {

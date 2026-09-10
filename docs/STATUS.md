@@ -2,13 +2,13 @@
 
 ## Current stage
 
-Stage 1 — Infrastructure smoke test complete
+Stage 2 — Synthetic streaming telemetry complete
 
 ## Overall
 
 - [x] Stage 0 — Bootstrap and compliance
 - [x] Stage 1 — Infrastructure smoke test
-- [ ] Stage 2 — Synthetic stream
+- [x] Stage 2 — Synthetic stream
 - [ ] Stage 3 — Detection and baseline
 - [ ] Stage 4 — ClickHouse, QoE, and Grafana
 - [ ] Stage 5 — Wazuh integration
@@ -24,15 +24,15 @@ None.
 
 ## Last verified command
 
-`npm run smoke:infra && npm run health`
+`npm run smoke:generator`
 
 ## Last verified result
 
-Kafka KRaft created, published, and consumed a real marker. ClickHouse persisted and queried a real row. Grafana loaded the pinned ClickHouse datasource and rendered provisioned data. Wazuh rule `100100` processed a Sentinel JSON incident and indexed the resulting alert. The unified health gate reported PASS for Kafka, ClickHouse, Grafana, and Wazuh.
+The deterministic generator published and consumed 24 schema-validated synthetic DNS events through the local `dns.telemetry` Kafka topic. All eight scenarios are repeatable, explicitly tagged as synthetic, and cover three fictional sites with deliberately different normal profiles.
 
 ## Next exact task
 
-Begin Stage 2 by generating the deterministic synthetic DNS stream defined in the master build plan.
+Begin Stage 3 with pure entropy and domain-feature functions plus unit tests.
 
 ## Known risks
 
