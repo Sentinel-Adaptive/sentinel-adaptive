@@ -6,7 +6,8 @@
   "exports": "./src/index.ts",
   "scripts": {
     "consume": "tsx --disable-warning=TimeoutNegativeWarning src/cli.ts",
-    "smoke": "tsx --disable-warning=TimeoutNegativeWarning src/smoke.ts"
+    "smoke": "tsx --disable-warning=TimeoutNegativeWarning src/smoke.ts",
+    "smoke:qoe": "tsx --disable-warning=TimeoutNegativeWarning src/qoe-smoke.ts"
   },
   "dependencies": {
     "@sentinel-adaptive/contracts": "0.0.0",

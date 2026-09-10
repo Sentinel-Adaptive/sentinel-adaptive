@@ -78,3 +78,17 @@ provenance?: {
 ```
 
 Downstream detection consumes both sources through the same Kafka topic and Stage 3 feature/baseline path.
+
+## ClickHouse persistence and QoE
+
+Stage 4 stores validated DNS events in `sentinel.dns_events` and completed 10-second site windows in `sentinel.site_metrics`. QoE is calculated from those windows with documented weights:
+
+```text
+availability  = 1 - nxdomainRatio
+latencyFactor = clamp(siteBaselineLatencyP95 / currentLatencyP95, 0, 1)
+capacity      = 1 - saturation
+qoeScore      = 0.45 × availability + 0.35 × latencyFactor + 0.20 × capacity
+```
+
+The score is an explainable site-experience number. It is not a detection verdict, not a measured Ovnicom SLA, and not a customer-impact claim. For challenge-replay events, `latencyMs` and `saturation` remain Sentinel synthetic enrichment, so those QoE components are synthetic as well.
+

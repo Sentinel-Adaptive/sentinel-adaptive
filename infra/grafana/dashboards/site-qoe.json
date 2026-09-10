@@ -1,0 +1,249 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "QoE is a site-window experience score, not a detection verdict and not a customer SLA.\n\n`qoe = 0.45 × (1 − NXDOMAIN ratio) + 0.35 × (site baseline latency p95 / current latency p95) + 0.20 × (1 − saturation)`\n\nLatency better than the site baseline is capped at 1. Without baseline history the latency factor is 1. For Ovnicom replay, latency and saturation are Sentinel enrichment.",
+        "mode": "markdown"
+      },
+      "title": "Transparent QoE recipe",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "format": 1,
+          "queryType": "sql",
+          "rawSql": "SELECT site_id, bucket_start, qoe_score, qoe_availability, qoe_latency_factor, qoe_capacity, latency_p95, nxdomain_ratio, saturation, qoe_explanation FROM sentinel.site_metrics ORDER BY bucket_start DESC LIMIT 1 BY site_id",
+          "refId": "A"
+        }
+      ],
+      "title": "Latest QoE by fictional site",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#f15a2a",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "max": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "format": 0,
+          "queryType": "sql",
+          "rawSql": "SELECT bucket_start AS time, site_id, qoe_score FROM sentinel.site_metrics WHERE $__timeFilter(bucket_start) ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "QoE over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#315e7d",
+            "mode": "fixed"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 6,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "format": 0,
+          "queryType": "sql",
+          "rawSql": "SELECT bucket_start AS time, site_id, latency_p95 FROM sentinel.site_metrics WHERE $__timeFilter(bucket_start) ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Resolver latency p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#b42318",
+            "mode": "fixed"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 6,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "max": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "format": 0,
+          "queryType": "sql",
+          "rawSql": "SELECT bucket_start AS time, site_id, nxdomain_ratio FROM sentinel.site_metrics WHERE $__timeFilter(bucket_start) ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "NXDOMAIN ratio",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 42,
+  "tags": [
+    "sentinel-adaptive",
+    "stage-4",
+    "qoe"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timezone": "utc",
+  "title": "Sentinel Adaptive Site QoE",
+  "uid": "sentinel-site-qoe",
+  "version": 1
+}
