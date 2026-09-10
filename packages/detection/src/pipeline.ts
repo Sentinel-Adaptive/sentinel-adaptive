@@ -3,10 +3,12 @@ import {
   type DnsEvent,
   type Signal,
   type SiteId,
+  type SiteQoe,
   type SiteWindowMetrics,
 } from "@sentinel-adaptive/contracts";
 
 import { computeBaseline, type SiteBaseline } from "./baseline.js";
+import { calculateQoe } from "./qoe.js";
 import { evaluateRules } from "./rules.js";
 import {
   BUCKET_MS,
@@ -23,8 +25,18 @@ interface SiteState {
   currentEvents: DnsEvent[];
 }
 
+export interface DetectionEngineOptions {
+  readonly onBucketComplete?: (
+    metrics: SiteWindowMetrics,
+    events: readonly DnsEvent[],
+    qoe: SiteQoe,
+  ) => void;
+}
+
 export class DetectionEngine {
   private readonly sites = new Map<SiteId, SiteState>();
+
+  constructor(private readonly options: DetectionEngineOptions = {}) {}
 
   ingest(raw: unknown): void {
     const event = dnsEventSchema.parse(raw);
@@ -55,6 +67,15 @@ export class DetectionEngine {
       }
     }
     return this.evaluate();
+  }
+
+  completedWindows(): SiteWindowMetrics[] {
+    return [...this.sites.values()]
+      .flatMap((state) => state.completedBuckets)
+      .sort(
+        (left, right) =>
+          Date.parse(left.bucketStart) - Date.parse(right.bucketStart),
+      );
   }
 
   evaluate(): Signal[] {
@@ -95,9 +116,19 @@ export class DetectionEngine {
     if (state.currentBucketStart === null) {
       return;
     }
-    state.completedBuckets.push(
-      buildBucketMetrics(siteId, state.currentBucketStart, state.currentEvents),
+    const metrics = buildBucketMetrics(
+      siteId,
+      state.currentBucketStart,
+      state.currentEvents,
     );
+    const qoe = calculateQoe(
+      metrics,
+      state.completedBuckets.length > 0
+        ? computeBaseline(state.completedBuckets)
+        : undefined,
+    );
+    state.completedBuckets.push(metrics);
+    this.options.onBucketComplete?.(metrics, state.currentEvents, qoe);
     if (state.completedBuckets.length > MAX_BUCKETS) {
       state.completedBuckets.splice(
         0,
@@ -128,6 +159,22 @@ export function processEvents(events: readonly unknown[]): Signal[] {
     engine.ingest(event);
   }
   return engine.flush();
+}
+
+export function collectSiteWindows(
+  events: readonly unknown[],
+): SiteWindowMetrics[] {
+  const engine = new DetectionEngine();
+  const parsed = events
+    .map((event) => dnsEventSchema.parse(event))
+    .sort(
+      (left, right) => Date.parse(left.timestamp) - Date.parse(right.timestamp),
+    );
+  for (const event of parsed) {
+    engine.ingest(event);
+  }
+  engine.flush();
+  return engine.completedWindows();
 }
 
 export const windowConstants = { BUCKET_MS, MAX_BUCKETS };

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   dnsEventSchema,
   signalSchema,
+  siteQoeSchema,
   siteWindowMetricsSchema,
 } from "./index.js";
 
@@ -132,5 +133,25 @@ describe("siteWindowMetricsSchema", () => {
     };
 
     expect(siteWindowMetricsSchema.parse(metrics)).toEqual(metrics);
+  });
+});
+
+describe("siteQoeSchema", () => {
+  it("accepts a transparent weighted QoE breakdown", () => {
+    const qoe = {
+      score: 0.91,
+      availability: 0.99,
+      latencyFactor: 1,
+      capacity: 0.82,
+      weights: {
+        availability: 0.45,
+        latency: 0.35,
+        capacity: 0.2,
+      },
+      explanation:
+        "QoE combines availability, latency versus this site's baseline, and unused capacity.",
+    };
+
+    expect(siteQoeSchema.parse(qoe)).toEqual(qoe);
   });
 });

@@ -134,3 +134,28 @@ export type Signal = z.infer<typeof signalSchema>;
 export type SignalType = z.infer<typeof signalTypeSchema>;
 export type SeverityHint = z.infer<typeof severityHintSchema>;
 export type SiteWindowMetrics = z.infer<typeof siteWindowMetricsSchema>;
+
+export const qoeWeights = {
+  availability: 0.45,
+  latency: 0.35,
+  capacity: 0.2,
+} as const;
+
+export const siteQoeSchema = z
+  .object({
+    score: z.number().min(0).max(1),
+    availability: z.number().min(0).max(1),
+    latencyFactor: z.number().min(0).max(1),
+    capacity: z.number().min(0).max(1),
+    weights: z
+      .object({
+        availability: z.literal(0.45),
+        latency: z.literal(0.35),
+        capacity: z.literal(0.2),
+      })
+      .strict(),
+    explanation: z.string().min(1),
+  })
+  .strict();
+
+export type SiteQoe = z.infer<typeof siteQoeSchema>;

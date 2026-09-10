@@ -5,7 +5,8 @@ export { summarizeDnsOutcomes } from "./dns-outcomes.js";
 export { extractDomainFeatures, splitLabels } from "./domain-features.js";
 export { shannonEntropy } from "./entropy.js";
 export { analyzePeriodicity } from "./periodicity.js";
-export { DetectionEngine, processEvents } from "./pipeline.js";
+export { DetectionEngine, collectSiteWindows, processEvents } from "./pipeline.js";
+export { calculateQoe, qoeForWindows, qoeWeights } from "./qoe.js";
 export { evaluateRules } from "./rules.js";
 export {
   BUCKET_MS,
