@@ -187,3 +187,53 @@ export const wazuhIncidentEventSchema = z
 
 export type WazuhClassification = z.infer<typeof wazuhClassificationSchema>;
 export type WazuhIncidentEvent = z.infer<typeof wazuhIncidentEventSchema>;
+
+export const qvacAmbiguousMin = 0.6;
+export const qvacAmbiguousMax = 0.75;
+
+export const qvacAssessments = [
+  "consistent",
+  "uncertain",
+  "insufficient_evidence",
+] as const;
+
+export const qvacResultStatuses = [
+  "skipped",
+  "ok",
+  "invalid",
+  "unavailable",
+] as const;
+
+export const qvacAssessmentSchema = z
+  .object({
+    assessment: z.enum(qvacAssessments),
+    rationale: z.string().min(1).max(500),
+    usedEvidence: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
+export const qvacResultSchema = z
+  .object({
+    signalId: z.string().uuid(),
+    status: z.enum(qvacResultStatuses),
+    assessment: qvacAssessmentSchema.optional(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.status === "ok" && value.assessment === undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "ok QVAC results require a validated assessment",
+      });
+    }
+    if (value.status !== "ok" && value.assessment !== undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "only ok QVAC results may include an assessment",
+      });
+    }
+  });
+
+export type QvacAssessment = z.infer<typeof qvacAssessmentSchema>;
+export type QvacResult = z.infer<typeof qvacResultSchema>;
+export type QvacResultStatus = z.infer<typeof qvacResultSchema>["status"];

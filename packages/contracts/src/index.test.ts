@@ -6,6 +6,8 @@ import {
   siteQoeSchema,
   siteWindowMetricsSchema,
   wazuhIncidentEventSchema,
+  qvacAssessmentSchema,
+  qvacResultSchema,
 } from "./index.js";
 
 const validEvent = {
@@ -173,5 +175,65 @@ describe("wazuhIncidentEventSchema", () => {
     };
 
     expect(wazuhIncidentEventSchema.parse(event)).toEqual(event);
+  });
+});
+
+describe("qvacAssessmentSchema", () => {
+  it("accepts a cautious evidence-only assessment", () => {
+    const assessment = {
+      assessment: "uncertain",
+      rationale: "NXDOMAIN ratio is elevated but the supplied window is short.",
+      usedEvidence: ["nxdomainRatio"],
+    };
+    expect(qvacAssessmentSchema.parse(assessment)).toEqual(assessment);
+  });
+
+  it("rejects empty usedEvidence or extra fields", () => {
+    expect(() =>
+      qvacAssessmentSchema.parse({
+        assessment: "consistent",
+        rationale: "matches supplied metrics",
+        usedEvidence: [],
+      }),
+    ).toThrow();
+    expect(() =>
+      qvacAssessmentSchema.parse({
+        assessment: "consistent",
+        rationale: "matches supplied metrics",
+        usedEvidence: ["nxdomainRatio"],
+        malwareFamily: "invented",
+      }),
+    ).toThrow();
+  });
+});
+
+describe("qvacResultSchema", () => {
+  it("accepts skipped and ok results with the matching payload", () => {
+    expect(
+      qvacResultSchema.parse({
+        signalId: validSignal.signalId,
+        status: "skipped",
+      }).status,
+    ).toBe("skipped");
+    expect(
+      qvacResultSchema.parse({
+        signalId: validSignal.signalId,
+        status: "ok",
+        assessment: {
+          assessment: "uncertain",
+          rationale: "periodicity is present but the window is short",
+          usedEvidence: ["interArrivalCv"],
+        },
+      }).status,
+    ).toBe("ok");
+  });
+
+  it("rejects an ok result without assessment", () => {
+    expect(() =>
+      qvacResultSchema.parse({
+        signalId: validSignal.signalId,
+        status: "ok",
+      }),
+    ).toThrow();
   });
 });

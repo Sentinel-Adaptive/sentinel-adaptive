@@ -9,6 +9,12 @@ export { DetectionEngine, collectSiteWindows, processEvents } from "./pipeline.j
 export { calculateQoe, qoeForWindows, qoeWeights } from "./qoe.js";
 export { evaluateRules } from "./rules.js";
 export {
+  evidenceBundle,
+  isAmbiguousSignal,
+  qvacAmbiguousMax,
+  qvacAmbiguousMin,
+} from "./qvac-routing.js";
+export {
   BUCKET_MS,
   MAX_BUCKETS,
   bucketStartMs,
