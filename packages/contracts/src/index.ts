@@ -109,7 +109,7 @@ export const signalSchema = z
     severityHint: severityHintSchema,
     evidence: z.array(evidenceItemSchema).min(1),
     source: z.literal("deterministic"),
-    incidentId: z.null(),
+    incidentId: z.string().min(1).max(64).nullable(),
   })
   .strict();
 
@@ -169,6 +169,17 @@ export const wazuhClassifications = [
 ] as const;
 
 export const wazuhClassificationSchema = z.enum(wazuhClassifications);
+
+export const signalTypeClassifications = {
+  beaconing: "possible_c2_beaconing",
+  tunneling: "possible_dns_tunneling",
+  dga: "possible_dga",
+  typosquatting: "possible_typosquatting",
+  baseline_deviation: "baseline_deviation",
+} as const satisfies Record<
+  (typeof signalTypes)[number],
+  (typeof wazuhClassifications)[number]
+>;
 
 export const wazuhIncidentEventSchema = z
   .object({
@@ -237,3 +248,25 @@ export const qvacResultSchema = z
 export type QvacAssessment = z.infer<typeof qvacAssessmentSchema>;
 export type QvacResult = z.infer<typeof qvacResultSchema>;
 export type QvacResultStatus = z.infer<typeof qvacResultSchema>["status"];
+
+export const incidentSchema = z
+  .object({
+    incidentId: z
+      .string()
+      .regex(/^INC-[A-F0-9]{16}$/),
+    timestamp: z.iso.datetime({ offset: true }),
+    windowStart: z.iso.datetime({ offset: true }),
+    siteId: siteIdSchema,
+    classification: wazuhClassificationSchema,
+    severity: severityHintSchema,
+    confidence: z.number().min(0).max(1),
+    signalCount: z.number().int().positive(),
+    signalIds: z.array(z.string().uuid()).min(1),
+    types: z.array(signalTypeSchema).min(1),
+    affectedEntities: z.array(z.string().min(1)),
+    summary: z.string().min(1).max(500),
+    qvac: z.array(qvacResultSchema).optional(),
+  })
+  .strict();
+
+export type Incident = z.infer<typeof incidentSchema>;

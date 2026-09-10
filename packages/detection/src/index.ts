@@ -9,6 +9,14 @@ export { DetectionEngine, collectSiteWindows, processEvents } from "./pipeline.j
 export { calculateQoe, qoeForWindows, qoeWeights } from "./qoe.js";
 export { evaluateRules } from "./rules.js";
 export {
+  CORRELATION_WINDOW_MS,
+  IncidentCorrelator,
+  affectedEntities,
+  correlateSignals,
+  correlationWindowStartMs,
+  incidentIdForWindow,
+} from "./correlate.js";
+export {
   evidenceBundle,
   isAmbiguousSignal,
   qvacAmbiguousMax,

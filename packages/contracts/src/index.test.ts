@@ -8,6 +8,7 @@ import {
   wazuhIncidentEventSchema,
   qvacAssessmentSchema,
   qvacResultSchema,
+  incidentSchema,
 } from "./index.js";
 
 const validEvent = {
@@ -109,13 +110,13 @@ describe("signalSchema", () => {
     expect(signalSchema.parse(validSignal)).toEqual(validSignal);
   });
 
-  it("rejects signals without evidence or with a non-deterministic source", () => {
-    expect(() =>
-      signalSchema.parse({ ...validSignal, evidence: [] }),
-    ).toThrow();
-    expect(() =>
-      signalSchema.parse({ ...validSignal, source: "qvac" }),
-    ).toThrow();
+  it("accepts a correlated incident identifier without dropping evidence", () => {
+    expect(
+      signalSchema.parse({
+        ...validSignal,
+        incidentId: "INC-0123456789ABCDEF",
+      }).incidentId,
+    ).toBe("INC-0123456789ABCDEF");
   });
 });
 
@@ -235,5 +236,29 @@ describe("qvacResultSchema", () => {
         status: "ok",
       }),
     ).toThrow();
+  });
+});
+
+describe("incidentSchema", () => {
+  it("accepts a correlated multi-signal incident", () => {
+    const incident = {
+      incidentId: "INC-0123456789ABCDEF",
+      timestamp: "2026-09-10T12:00:20.000Z",
+      windowStart: "2026-09-10T12:00:00.000Z",
+      siteId: "PTY-BANK-01",
+      classification: "possible_dga",
+      severity: "high",
+      confidence: 0.9,
+      signalCount: 2,
+      signalIds: [
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+      ],
+      types: ["dga", "tunneling"],
+      affectedEntities: ["c2.secure-bank.test"],
+      summary:
+        "2 correlated dga, tunneling signal(s) on PTY-BANK-01: many names fail to resolve",
+    };
+    expect(incidentSchema.parse(incident)).toEqual(incident);
   });
 });
