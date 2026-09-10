@@ -41,7 +41,7 @@ try {
     const offsetsAfter = readTopicOffsets(topic);
     const received = consumeTopicRange(topic, offsetsBefore, offsetsAfter).filter(
       (event) =>
-        event.generator.seed === seed &&
+        event.generator?.seed === seed &&
         event.scenarioTag === testCase.scenario,
     );
 

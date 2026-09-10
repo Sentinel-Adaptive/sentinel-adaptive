@@ -30,4 +30,4 @@ npm run demo:combined -- --dry-run --count 12
 npm run demo:normal -- --site PTY-HEALTH-01 --seed 7 --count 50
 ```
 
-Every event includes `synthetic: true`, a `scenarioTag`, deterministic generator metadata, and only fictional domains under `.test`.
+Every event includes `source: "sentinel-synthetic"`, `synthetic: true`, a `scenarioTag`, deterministic generator metadata, optional `provenance.scenario`, and only fictional domains under `.test`.

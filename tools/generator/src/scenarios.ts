@@ -79,18 +79,22 @@ function createNormalEvent(
     latencyMs: round(Math.max(1, profile.baseLatencyMs + latencyOffset)),
     resolverId: profile.resolverId,
     scenarioTag: "normal",
+    source: "sentinel-synthetic",
     synthetic: true,
     saturation: profile.saturation,
     generator: {
       seed,
       sequence,
     },
+    provenance: {
+      scenario: "normal",
+    },
   };
 }
 
 function applyBehavior(
   event: DnsEvent,
-  behavior: Exclude<ScenarioTag, "normal" | "combined">,
+  behavior: Exclude<ScenarioTag, "normal" | "background" | "combined">,
   sequence: number,
   startTimeMs: number,
   random: DeterministicRandom,
@@ -185,7 +189,7 @@ export function generateScenario(
       random,
     );
 
-    if (options.scenario !== "normal") {
+    if (options.scenario !== "normal" && options.scenario !== "background") {
       const behavior =
         options.scenario === "combined"
           ? ([
@@ -195,13 +199,25 @@ export function generateScenario(
               "typosquat",
               "degrade-qoe",
               "saturation",
-            ][sequence % 6] as Exclude<ScenarioTag, "normal" | "combined">)
+            ][sequence % 6] as Exclude<
+              ScenarioTag,
+              "normal" | "background" | "combined"
+            >)
           : options.scenario;
       event = applyBehavior(event, behavior, sequence, startTimeMs, random);
     }
 
-    event.scenarioTag = options.scenario;
-    events.push(dnsEventSchema.parse(event));
+    events.push(
+      dnsEventSchema.parse({
+        ...event,
+        scenarioTag: options.scenario,
+        source: "sentinel-synthetic",
+        synthetic: true,
+        provenance: {
+          scenario: options.scenario,
+        },
+      }),
+    );
   }
 
   return events;

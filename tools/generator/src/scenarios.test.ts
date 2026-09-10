@@ -38,7 +38,9 @@ describe("synthetic DNS scenarios", () => {
       for (const event of events) {
         expect(dnsEventSchema.parse(event)).toEqual(event);
         expect(event.synthetic).toBe(true);
+        expect(event.source).toBe("sentinel-synthetic");
         expect(event.scenarioTag).toBe(scenario);
+        expect(event.provenance?.scenario).toBe(scenario);
       }
     }
   });

@@ -17,11 +17,15 @@ const validEvent = {
   latencyMs: 21.4,
   resolverId: "dns-01",
   scenarioTag: "normal",
+  source: "sentinel-synthetic",
   synthetic: true,
   saturation: 0.2,
   generator: {
     seed: 424242,
     sequence: 0,
+  },
+  provenance: {
+    scenario: "normal",
   },
 };
 
@@ -30,9 +34,34 @@ describe("dnsEventSchema", () => {
     expect(dnsEventSchema.parse(validEvent)).toEqual(validEvent);
   });
 
-  it("rejects untagged or non-synthetic telemetry", () => {
+  it("accepts challenge-replay events with explicit provenance", () => {
+    const challengeEvent = {
+      timestamp: "2026-09-09T08:04:59.901Z",
+      siteId: "PTY-BANK-01",
+      zone: "banking-east",
+      clientIp: "192.0.2.10",
+      qname: "unifi",
+      qtype: "HTTPS",
+      rcode: "NOERROR",
+      latencyMs: 18,
+      resolverId: "172.19.1.2",
+      scenarioTag: "background",
+      source: "ovnicom-challenge",
+      synthetic: false,
+      saturation: 0.18,
+      provenance: {
+        originalFile: "queries.0",
+        originalLine: 1,
+        enrichedFields: ["siteId", "zone", "latencyMs", "saturation", "rcode", "scenarioTag"],
+      },
+    };
+
+    expect(dnsEventSchema.parse(challengeEvent)).toEqual(challengeEvent);
+  });
+
+  it("rejects untagged telemetry and unknown sources", () => {
     expect(() =>
-      dnsEventSchema.parse({ ...validEvent, synthetic: false }),
+      dnsEventSchema.parse({ ...validEvent, source: "customer-prod" }),
     ).toThrow();
     expect(() => {
       const untagged: Partial<typeof validEvent> = { ...validEvent };

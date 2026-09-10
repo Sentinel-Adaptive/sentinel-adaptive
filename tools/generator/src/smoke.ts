@@ -123,7 +123,7 @@ try {
       if (
         parsed.success &&
         parsed.data.scenarioTag === "combined" &&
-        parsed.data.generator.seed === seed
+        parsed.data.generator?.seed === seed
       ) {
         received.push(parsed.data);
       }
@@ -143,14 +143,15 @@ try {
     received.some(
       (event) =>
         event.scenarioTag !== "combined" ||
-        event.generator.seed !== seed ||
-        event.synthetic !== true,
+        event.generator?.seed !== seed ||
+        event.synthetic !== true ||
+        event.source !== "sentinel-synthetic",
     )
   ) {
     throw new Error("Synthetic stream metadata was invalid.");
   }
   const sequences = received
-    .map((event) => event.generator.sequence)
+    .map((event) => event.generator?.sequence ?? -1)
     .sort((left, right) => left - right);
   if (sequences.some((sequence, index) => sequence !== index)) {
     throw new Error("Synthetic stream sequence was incomplete.");

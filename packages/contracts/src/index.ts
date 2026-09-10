@@ -8,6 +8,7 @@ export const siteIds = [
 
 export const scenarioTags = [
   "normal",
+  "background",
   "dga",
   "tunnel",
   "beacon",
@@ -17,41 +18,65 @@ export const scenarioTags = [
   "combined",
 ] as const;
 
+export const telemetrySources = [
+  "ovnicom-challenge",
+  "sentinel-synthetic",
+] as const;
+
 export const siteIdSchema = z.enum(siteIds);
 export const scenarioTagSchema = z.enum(scenarioTags);
+export const telemetrySourceSchema = z.enum(telemetrySources);
+
+export const eventProvenanceSchema = z
+  .object({
+    originalFile: z.string().min(1).max(255).optional(),
+    originalLine: z.number().int().positive().optional(),
+    enrichedFields: z.array(z.string().min(1)).optional(),
+    scenario: z.string().min(1).optional(),
+  })
+  .strict();
 
 export const dnsEventSchema = z
   .object({
     timestamp: z.iso.datetime({ offset: true }),
     siteId: siteIdSchema,
     zone: z.string().min(1),
-    clientIp: z.ipv4(),
+    clientIp: z.union([z.ipv4(), z.ipv6()]),
     qname: z
       .string()
       .min(1)
       .max(253)
       .regex(
-        /^(?=.{1,253}\.?$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i,
+        /^(?=.{1,253}$)(?:\*|_?[A-Za-z0-9](?:[A-Za-z0-9_-]{0,61}[A-Za-z0-9])?)(?:\.(?:\*|_?[A-Za-z0-9](?:[A-Za-z0-9_-]{0,61}[A-Za-z0-9])?))*\.?$/,
       ),
-    qtype: z.enum(["A", "AAAA", "CNAME", "MX", "TXT"]),
+    qtype: z
+      .string()
+      .min(1)
+      .max(32)
+      .regex(/^[A-Z][A-Z0-9]*$/),
     rcode: z.enum(["NOERROR", "NXDOMAIN", "SERVFAIL", "REFUSED"]),
     latencyMs: z.number().finite().nonnegative(),
     resolverId: z.string().min(1),
     scenarioTag: scenarioTagSchema,
-    synthetic: z.literal(true),
+    source: telemetrySourceSchema,
+    synthetic: z.boolean(),
     saturation: z.number().min(0).max(1),
     generator: z
       .object({
         seed: z.number().int().nonnegative(),
         sequence: z.number().int().nonnegative(),
       })
-      .strict(),
+      .strict()
+      .optional(),
+    provenance: eventProvenanceSchema.optional(),
   })
   .strict();
 
 export type DnsEvent = z.infer<typeof dnsEventSchema>;
 export type ScenarioTag = z.infer<typeof scenarioTagSchema>;
 export type SiteId = z.infer<typeof siteIdSchema>;
+export type TelemetrySource = z.infer<typeof telemetrySourceSchema>;
+export type EventProvenance = z.infer<typeof eventProvenanceSchema>;
 
 export const signalTypes = [
   "beaconing",

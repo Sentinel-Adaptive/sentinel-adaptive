@@ -24,7 +24,8 @@ function toMessage(event: DnsEvent): Message {
     value: JSON.stringify(event),
     headers: {
       scenario: event.scenarioTag,
-      synthetic: "true",
+      source: event.source,
+      synthetic: event.synthetic ? "true" : "false",
     },
   };
 }
