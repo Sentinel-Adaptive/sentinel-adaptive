@@ -86,6 +86,10 @@ export class IncidentCorrelator {
       );
     });
   }
+
+  membersOf(incidentId: string): Signal[] {
+    return [...(this.open.get(incidentId)?.members.values() ?? [])];
+  }
 }
 
 export function correlateSignals(

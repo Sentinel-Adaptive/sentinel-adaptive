@@ -9,6 +9,7 @@ import {
   qvacAssessmentSchema,
   qvacResultSchema,
   incidentSchema,
+  systemStatusSchema,
 } from "./index.js";
 
 const validEvent = {
@@ -260,5 +261,30 @@ describe("incidentSchema", () => {
         "2 correlated dga, tunneling signal(s) on PTY-BANK-01: many names fail to resolve",
     };
     expect(incidentSchema.parse(incident)).toEqual(incident);
+  });
+});
+
+describe("systemStatusSchema", () => {
+  it("records local-only QVAC and forbids cloud inference", () => {
+    const status = {
+      tracks: ["03", "04"] as const,
+      qvac: {
+        sdk: "0.19.0" as const,
+        inference: "0.19.0" as const,
+        model: "LLAMA_3_2_1B_INST_Q4_0" as const,
+        localOnly: true,
+      },
+      cloudInference: false as const,
+      services: {
+        kafka: "ok" as const,
+        clickhouse: "ok" as const,
+        grafana: "unknown" as const,
+        wazuh: "down" as const,
+      },
+    };
+    expect(systemStatusSchema.parse(status)).toEqual(status);
+    expect(() =>
+      systemStatusSchema.parse({ ...status, cloudInference: true }),
+    ).toThrow();
   });
 });

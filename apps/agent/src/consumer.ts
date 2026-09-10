@@ -7,9 +7,12 @@ import {
   ensureTelemetrySchema,
   persistBucket,
   persistIncidents,
+  persistQvacResults,
+  persistSignals,
   type ClickHouseSettings,
 } from "./clickhouse.js";
 import { assessAmbiguousSignals } from "./qvac.js";
+import { operatorStore, type OperatorStore } from "./store.js";
 import { emitWazuhIncidents } from "./wazuh.js";
 
 export const defaultKafkaBroker = "localhost:9092";
@@ -26,6 +29,7 @@ export interface ConsumeStreamOptions {
   readonly clickhouse?: ClickHouseSettings;
   readonly onSignals?: (signals: readonly Signal[]) => void;
   readonly onIncidents?: (incidents: readonly Incident[]) => void;
+  readonly store?: OperatorStore;
 }
 
 export async function consumeDnsStream(
@@ -36,6 +40,7 @@ export async function consumeDnsStream(
   const persist = options.persist ?? true;
   const emitWazuh = options.emitWazuh ?? true;
   const assessQvac = options.assessQvac ?? true;
+  const store = options.store ?? operatorStore;
   const kafka = new Kafka({
     clientId: "sentinel-agent",
     brokers: [broker],
@@ -93,6 +98,10 @@ export async function consumeDnsStream(
         options.onSignals?.(signals);
         const incidents = correlator.ingest(signals);
         if (incidents.length > 0) {
+          const members = incidents.flatMap((incident) =>
+            correlator.membersOf(incident.incidentId),
+          );
+          store.recordIncidents(incidents, members);
           options.onIncidents?.(incidents);
           if (persist) {
             void persistIncidents(incidents, options.clickhouse).catch(
@@ -103,19 +112,42 @@ export async function consumeDnsStream(
                 );
               },
             );
+            void persistSignals(members, options.clickhouse).catch(
+              (error: unknown) => {
+                console.error(
+                  "ClickHouse signal persist failed:",
+                  error instanceof Error ? error.message : error,
+                );
+              },
+            );
           }
           if (emitWazuh) {
-            void emitWazuhIncidents(incidents).catch((error: unknown) => {
-              console.error(
-                "Wazuh emit failed:",
-                error instanceof Error ? error.message : error,
-              );
-            });
+            void emitWazuhIncidents(incidents)
+              .then(() => {
+                store.markWazuhEmitted(incidents.map((item) => item.incidentId));
+              })
+              .catch((error: unknown) => {
+                console.error(
+                  "Wazuh emit failed:",
+                  error instanceof Error ? error.message : error,
+                );
+              });
           }
         }
         if (assessQvac) {
           void assessAmbiguousSignals(signals)
             .then((results) => {
+              store.recordQvac(results);
+              if (persist) {
+                void persistQvacResults(results, options.clickhouse).catch(
+                  (error: unknown) => {
+                    console.error(
+                      "ClickHouse QVAC persist failed:",
+                      error instanceof Error ? error.message : error,
+                    );
+                  },
+                );
+              }
               for (const result of results) {
                 if (result.status === "invalid" || result.status === "unavailable") {
                   console.error(

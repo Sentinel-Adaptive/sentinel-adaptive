@@ -1,6 +1,8 @@
 import type {
   DnsEvent,
   Incident,
+  QvacResult,
+  Signal,
   SiteQoe,
   SiteWindowMetrics,
 } from "@sentinel-adaptive/contracts";
@@ -69,6 +71,30 @@ ORDER BY (site_id, bucket_start)`,
 )
 ENGINE = ReplacingMergeTree(timestamp)
 ORDER BY (site_id, incident_id)`,
+  `CREATE TABLE IF NOT EXISTS signals
+(
+    signal_id String,
+    timestamp DateTime64(3, 'UTC'),
+    site_id LowCardinality(String),
+    type LowCardinality(String),
+    score Float64,
+    severity LowCardinality(String),
+    incident_id String,
+    evidence_json String
+)
+ENGINE = ReplacingMergeTree(timestamp)
+ORDER BY (incident_id, signal_id)`,
+  `CREATE TABLE IF NOT EXISTS qvac_results
+(
+    signal_id String,
+    status LowCardinality(String),
+    assessment LowCardinality(String),
+    rationale String,
+    used_evidence Array(String),
+    updated_at DateTime64(3, 'UTC')
+)
+ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY signal_id`,
 ];
 
 export interface ClickHouseSettings {
@@ -253,4 +279,49 @@ export async function persistIncidents(
   overrides: ClickHouseSettings = {},
 ): Promise<void> {
   await insertRows("incidents", incidents.map(incidentRow), overrides);
+}
+
+function signalRow(signal: Signal): Record<string, unknown> {
+  return {
+    signal_id: signal.signalId,
+    timestamp: toClickHouseDateTime(signal.timestamp),
+    site_id: signal.siteId,
+    type: signal.type,
+    score: signal.score,
+    severity: signal.severityHint,
+    incident_id: signal.incidentId ?? "",
+    evidence_json: JSON.stringify(signal.evidence),
+  };
+}
+
+export async function persistSignals(
+  signals: readonly Signal[],
+  overrides: ClickHouseSettings = {},
+): Promise<void> {
+  await insertRows("signals", signals.map(signalRow), overrides);
+}
+
+function qvacRow(result: QvacResult): Record<string, unknown> {
+  return {
+    signal_id: result.signalId,
+    status: result.status,
+    assessment: result.assessment?.assessment ?? "",
+    rationale: result.assessment?.rationale ?? "",
+    used_evidence: result.assessment?.usedEvidence ?? [],
+    updated_at: toClickHouseDateTime(new Date().toISOString()),
+  };
+}
+
+export async function persistQvacResults(
+  results: readonly QvacResult[],
+  overrides: ClickHouseSettings = {},
+): Promise<void> {
+  await insertRows("qvac_results", results.map(qvacRow), overrides);
+}
+
+export function fromClickHouseDateTime(value: string): string {
+  if (value.includes("T")) {
+    return new Date(value).toISOString();
+  }
+  return new Date(`${value.replace(" ", "T")}Z`).toISOString();
 }

@@ -59,3 +59,29 @@ CREATE TABLE IF NOT EXISTS sentinel.incidents
 )
 ENGINE = ReplacingMergeTree(timestamp)
 ORDER BY (site_id, incident_id);
+
+CREATE TABLE IF NOT EXISTS sentinel.signals
+(
+    signal_id String,
+    timestamp DateTime64(3, 'UTC'),
+    site_id LowCardinality(String),
+    type LowCardinality(String),
+    score Float64,
+    severity LowCardinality(String),
+    incident_id String,
+    evidence_json String
+)
+ENGINE = ReplacingMergeTree(timestamp)
+ORDER BY (incident_id, signal_id);
+
+CREATE TABLE IF NOT EXISTS sentinel.qvac_results
+(
+    signal_id String,
+    status LowCardinality(String),
+    assessment LowCardinality(String),
+    rationale String,
+    used_evidence Array(String),
+    updated_at DateTime64(3, 'UTC')
+)
+ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY signal_id;

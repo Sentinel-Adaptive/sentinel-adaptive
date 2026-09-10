@@ -270,3 +270,89 @@ export const incidentSchema = z
   .strict();
 
 export type Incident = z.infer<typeof incidentSchema>;
+
+export const serviceHealthStates = ["ok", "down", "unknown"] as const;
+
+export const wazuhIndexStates = ["yes", "no", "unknown"] as const;
+
+export const systemStatusSchema = z
+  .object({
+    tracks: z.tuple([z.literal("03"), z.literal("04")]),
+    qvac: z
+      .object({
+        sdk: z.literal("0.19.0"),
+        inference: z.literal("0.19.0"),
+        model: z.literal("LLAMA_3_2_1B_INST_Q4_0"),
+        localOnly: z.boolean(),
+      })
+      .strict(),
+    cloudInference: z.literal(false),
+    services: z
+      .object({
+        kafka: z.enum(serviceHealthStates),
+        clickhouse: z.enum(serviceHealthStates),
+        grafana: z.enum(serviceHealthStates),
+        wazuh: z.enum(serviceHealthStates),
+      })
+      .strict(),
+  })
+  .strict();
+
+export const siteOverviewRowSchema = z
+  .object({
+    siteId: siteIdSchema,
+    latestQoe: z.number().min(0).max(1).nullable(),
+    latestWindowStart: z.iso.datetime({ offset: true }).nullable(),
+    incidentCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export const overviewResponseSchema = z
+  .object({
+    generatedAt: z.iso.datetime({ offset: true }),
+    sites: z.array(siteOverviewRowSchema),
+    recentIncidents: z.array(incidentSchema),
+  })
+  .strict();
+
+export const wazuhStatusSchema = z
+  .object({
+    emitted: z.boolean(),
+    indexed: z.enum(wazuhIndexStates),
+  })
+  .strict();
+
+export const incidentDetailSchema = z
+  .object({
+    incident: incidentSchema,
+    signals: z.array(signalSchema),
+    qvac: z.array(qvacResultSchema),
+    wazuh: wazuhStatusSchema,
+    currentWindow: siteWindowMetricsSchema.optional(),
+    priorNxdomainRatioMean: z.number().min(0).max(1).optional(),
+    priorLatencyP95Mean: z.number().nonnegative().optional(),
+  })
+  .strict();
+
+export const siteDetailSchema = z
+  .object({
+    siteId: siteIdSchema,
+    windows: z.array(siteWindowMetricsSchema),
+    qoe: siteQoeSchema.optional(),
+    priorWindows: z
+      .object({
+        nxdomainRatioMean: z.number().min(0).max(1),
+        latencyP95Mean: z.number().nonnegative(),
+        samples: z.number().int().nonnegative(),
+      })
+      .strict()
+      .optional(),
+    incidents: z.array(incidentSchema),
+  })
+  .strict();
+
+export type SystemStatus = z.infer<typeof systemStatusSchema>;
+export type OverviewResponse = z.infer<typeof overviewResponseSchema>;
+export type IncidentDetail = z.infer<typeof incidentDetailSchema>;
+export type SiteDetail = z.infer<typeof siteDetailSchema>;
+export type WazuhStatus = z.infer<typeof wazuhStatusSchema>;

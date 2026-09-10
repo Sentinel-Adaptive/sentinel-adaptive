@@ -1,14 +1,29 @@
 export {
+  createOperatorApi,
+  defaultApiPort,
+  handleOperatorRequest,
+  listenOperatorApi,
+} from "./api.js";
+export {
   clickHouseQuery,
   defaultClickHouseDatabase,
   defaultClickHouseUrl,
   ensureTelemetrySchema,
   persistBucket,
   persistIncidents,
+  persistQvacResults,
+  persistSignals,
   persistTelemetry,
   toClickHouseDateTime,
   type ClickHouseSettings,
 } from "./clickhouse.js";
+export { OperatorStore, operatorStore } from "./store.js";
+export {
+  defaultWazuhEventLog,
+  emitWazuhIncidents,
+  toWazuhIncidentEvent,
+  wazuhIndexState,
+} from "./wazuh.js";
 export {
   consumeDnsStream,
   defaultKafkaBroker,
@@ -21,8 +36,3 @@ export {
   qvacLocalOnly,
   unloadQvacModel,
 } from "./qvac.js";
-export {
-  defaultWazuhEventLog,
-  emitWazuhIncidents,
-  toWazuhIncidentEvent,
-} from "./wazuh.js";

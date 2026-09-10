@@ -56,7 +56,10 @@ export async function emitWazuhIncidents(
   return events;
 }
 
-export function searchWazuhAlert(incidentId: string): boolean {
+function queryWazuhIndexer(
+  incidentId: string,
+  timeoutMs?: number,
+): { reachable: boolean; hits: number } {
   const user = process.env.WAZUH_INDEXER_USER ?? "admin";
   const password = process.env.WAZUH_INDEXER_PASSWORD ?? "SecretPassword";
   const query = JSON.stringify({
@@ -90,21 +93,35 @@ export function searchWazuhAlert(incidentId: string): boolean {
       encoding: "utf8",
       input: query,
       windowsHide: true,
+      ...(timeoutMs === undefined ? {} : { timeout: timeoutMs }),
     },
   );
 
-  if (result.status !== 0) {
-    return false;
+  if (result.status !== 0 || result.error) {
+    return { reachable: false, hits: 0 };
   }
 
   try {
     const response = JSON.parse(result.stdout) as {
       hits?: { total?: { value?: number } };
     };
-    return (response.hits?.total?.value ?? 0) > 0;
+    return { reachable: true, hits: response.hits?.total?.value ?? 0 };
   } catch {
-    return false;
+    return { reachable: false, hits: 0 };
   }
+}
+
+export function searchWazuhAlert(incidentId: string): boolean {
+  const result = queryWazuhIndexer(incidentId);
+  return result.reachable && result.hits > 0;
+}
+
+export function wazuhIndexState(incidentId: string): "yes" | "no" | "unknown" {
+  const result = queryWazuhIndexer(incidentId, 8_000);
+  if (!result.reachable) {
+    return "unknown";
+  }
+  return result.hits > 0 ? "yes" : "no";
 }
 
 export async function waitForWazuhAlert(

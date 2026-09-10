@@ -1,10 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { generateScenario } from "@sentinel-adaptive/generator";
-import { collectSiteWindows, correlateSignals, processEvents } from "@sentinel-adaptive/detection";
+import {
+  IncidentCorrelator,
+  collectSiteWindows,
+  correlateSignals,
+  processEvents,
+} from "@sentinel-adaptive/detection";
 
 import {
   persistIncidents,
+  persistSignals,
   persistTelemetry,
   toClickHouseDateTime,
 } from "./clickhouse.js";
@@ -96,6 +102,37 @@ describe("ClickHouse persistence", () => {
         (request) =>
           request.query.startsWith("INSERT INTO incidents") &&
           (request.body?.includes(incidents[0]?.incidentId ?? "") ?? false),
+      ),
+    ).toBe(true);
+  });
+
+  it("inserts correlated member signals with evidence json", async () => {
+    const requests: Array<{ query: string; body?: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        requests.push({
+          query: url.searchParams.get("query") ?? "",
+          body: typeof init?.body === "string" ? init.body : undefined,
+        });
+        return new Response("", { status: 200 });
+      }),
+    );
+
+    const correlator = new IncidentCorrelator();
+    const incidents = correlator.ingest(
+      processEvents(generateScenario({ scenario: "dga", count: 20 })).filter(
+        (signal) => signal.type === "dga",
+      ),
+    );
+    const members = correlator.membersOf(incidents[0]!.incidentId);
+    await persistSignals(members, { url: "http://clickhouse.test:8123" });
+    expect(
+      requests.some(
+        (request) =>
+          request.query.startsWith("INSERT INTO signals") &&
+          (request.body?.includes("evidence_json") ?? false),
       ),
     ).toBe(true);
   });
