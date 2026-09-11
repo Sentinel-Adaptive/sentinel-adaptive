@@ -1,5 +1,5 @@
+import { spawn } from "node:child_process";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,6 +11,7 @@ import {
   buildSiteDetail,
   buildSystemStatus,
   parseSiteId,
+  readIncidents,
 } from "./api-read.js";
 import { OperatorStore } from "./store.js";
 
@@ -44,7 +45,7 @@ export async function handleOperatorRequest(
 
   try {
     if (request.method === "GET" && url.pathname === "/api/system") {
-      json(response, 200, buildSystemStatus(probeServices()));
+      json(response, 200, buildSystemStatus(await probeServices()));
       return;
     }
     if (request.method === "GET" && url.pathname === "/api/overview") {
@@ -52,8 +53,9 @@ export async function handleOperatorRequest(
       return;
     }
     if (request.method === "GET" && url.pathname === "/api/incidents") {
-      const overview = await buildOverview(store);
-      json(response, 200, overview.recentIncidents);
+      const stored = store.listIncidents();
+      const incidents = stored.length > 0 ? stored : await readIncidents();
+      json(response, 200, incidents.slice(0, 100));
       return;
     }
     if (request.method === "GET" && url.pathname === "/api/events") {
@@ -91,20 +93,76 @@ export async function handleOperatorRequest(
   }
 }
 
-export function probeServices(): SystemStatus["services"] {
-  const result = spawnSync(process.execPath, ["scripts/healthcheck.mjs"], {
-    cwd: root,
-    encoding: "utf8",
-    windowsHide: true,
-    timeout: 25_000,
+const healthCacheMs = 15_000;
+const unknownServices: SystemStatus["services"] = {
+  kafka: "unknown",
+  clickhouse: "unknown",
+  grafana: "unknown",
+  wazuh: "unknown",
+};
+
+let healthCache:
+  | { at: number; services: SystemStatus["services"] }
+  | undefined;
+let healthInflight: Promise<SystemStatus["services"]> | undefined;
+
+export async function probeServices(): Promise<SystemStatus["services"]> {
+  if (healthCache && Date.now() - healthCache.at < healthCacheMs) {
+    return healthCache.services;
+  }
+  if (healthInflight) {
+    return healthInflight;
+  }
+  healthInflight = collectHealth()
+    .then((services) => {
+      healthCache = { at: Date.now(), services };
+      return services;
+    })
+    .finally(() => {
+      healthInflight = undefined;
+    });
+  return healthInflight;
+}
+
+function collectHealth(): Promise<SystemStatus["services"]> {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, ["scripts/healthcheck.mjs"], {
+      cwd: root,
+      windowsHide: true,
+    });
+    let output = "";
+    let settled = false;
+    const finish = (services: SystemStatus["services"]) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(services);
+    };
+    const timer = setTimeout(() => {
+      child.kill();
+      finish(unknownServices);
+    }, 25_000);
+    child.stdout.on("data", (chunk: Buffer) => {
+      output += chunk.toString();
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      output += chunk.toString();
+    });
+    child.on("close", () => {
+      clearTimeout(timer);
+      finish({
+        kafka: serviceState(output, "Kafka"),
+        clickhouse: serviceState(output, "ClickHouse"),
+        grafana: serviceState(output, "Grafana"),
+        wazuh: serviceState(output, "Wazuh"),
+      });
+    });
+    child.on("error", () => {
+      clearTimeout(timer);
+      finish(unknownServices);
+    });
   });
-  const output = `${result.stdout}\n${result.stderr}`;
-  return {
-    kafka: serviceState(output, "Kafka"),
-    clickhouse: serviceState(output, "ClickHouse"),
-    grafana: serviceState(output, "Grafana"),
-    wazuh: serviceState(output, "Wazuh"),
-  };
 }
 
 function serviceState(

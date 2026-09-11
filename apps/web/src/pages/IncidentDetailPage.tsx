@@ -1,22 +1,29 @@
-import type { ReactNode } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
-import type { IncidentDetail, SystemStatus } from "@sentinel-adaptive/contracts";
+import type { IncidentDetail, QvacResult, Signal, SystemStatus } from "@sentinel-adaptive/contracts";
 
 import type { ShellContext } from "../AppShell.js";
 import {
-  formatEnumLabel,
   formatEvidenceValue,
   formatLatencyMs,
   formatPercent,
   formatTime,
   qvacConfidenceToken,
   qvacExplanation,
-  severityClass,
 } from "../format.js";
-import { EmptyState, ErrorBanner, PageHeader, Panel } from "../ui.js";
+import { translateKnown, useI18n, type Translate } from "../i18n.js";
+import {
+  EmptyState,
+  ErrorBanner,
+  Fact,
+  LoadingState,
+  PageHeader,
+  Panel,
+  SeverityBadge,
+} from "../ui.js";
 import { useJson } from "../use-json.js";
 
 export function IncidentDetailPage() {
+  const { t } = useI18n();
   const { id } = useParams();
   const { tick } = useOutletContext<ShellContext>();
   const { data, error, loading } = useJson<IncidentDetail>(
@@ -28,11 +35,11 @@ export function IncidentDetailPage() {
   return (
     <div>
       <PageHeader
-        title={data?.incident.incidentId ?? "Incident"}
-        description="Member evidence, optional QVAC assessment, Wazuh emit/index status, and site window context when stored locally."
+        title={data?.incident.incidentId ?? t("detail.fallbackTitle")}
+        description={t("detail.description")}
       />
       {error ? <ErrorBanner>{error}</ErrorBanner> : null}
-      {loading && !data ? <p className="text-sm text-muted">Loading local data…</p> : null}
+      {loading && !data ? <LoadingState label={t("common.loading")} /> : null}
       {data ? <IncidentBody detail={data} system={system.data} /> : null}
     </div>
   );
@@ -45,241 +52,294 @@ function IncidentBody({
   detail: IncidentDetail;
   system: SystemStatus | null;
 }) {
+  const { t } = useI18n();
   const { incident, signals, qvac, wazuh } = detail;
   return (
     <div className="space-y-5">
-      <Panel title="Incident">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm lg:grid-cols-3">
-          <Fact label="Site">
-            <Link className="text-ink underline-offset-2 hover:underline" to={`/sites/${incident.siteId}`}>
+      <Panel title={t("detail.summary")}>
+        <div className="flex flex-wrap items-center gap-2">
+          <SeverityBadge severity={incident.severity} />
+          <span className="text-sm font-medium text-ink">
+            {translateKnown(t, "enum", incident.classification)}
+          </span>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-muted">{incident.summary}</p>
+        <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 text-sm lg:grid-cols-3">
+          <Fact label={t("common.site")}>
+            <Link
+              className="text-ink underline-offset-2 hover:underline"
+              to={`/sites/${incident.siteId}`}
+            >
               {incident.siteId}
             </Link>
           </Fact>
-          <Fact label="Classification">{formatEnumLabel(incident.classification)}</Fact>
-          <Fact label="Severity">
-            <span className={severityClass(incident.severity)}>
-              {formatEnumLabel(incident.severity)}
-            </span>
+          <Fact label={t("common.confidence")}>{formatPercent(incident.confidence)}</Fact>
+          <Fact label={t("common.signals")}>{incident.signalCount}</Fact>
+          <Fact label={t("common.window")}>{formatTime(incident.windowStart)}</Fact>
+          <Fact label={t("detail.lastSignal")}>{formatTime(incident.timestamp)}</Fact>
+          <Fact label={t("detail.types")}>
+            {incident.types.map((type) => translateKnown(t, "enum", type)).join(", ")}
           </Fact>
-          <Fact label="Confidence">{formatPercent(incident.confidence)}</Fact>
-          <Fact label="Signals">{incident.signalCount}</Fact>
-          <Fact label="Window">{formatTime(incident.windowStart)}</Fact>
-          <Fact label="Last signal">{formatTime(incident.timestamp)}</Fact>
-          <Fact label="Types">{incident.types.map((type) => formatEnumLabel(type)).join(", ")}</Fact>
-          <Fact label="Entities">
+          <Fact label={t("detail.entities")}>
             {incident.affectedEntities.length > 0
               ? incident.affectedEntities.join(", ")
-              : "None recorded on member evidence"}
+              : t("detail.noEntities")}
           </Fact>
         </dl>
-        <p className="mt-3 text-sm text-muted">{incident.summary}</p>
       </Panel>
 
-      <Panel title="Wazuh pipeline">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <Fact label="Sentinel → Wazuh log">{wazuh.emitted ? "Written" : "Not written"}</Fact>
-          <Fact label="Wazuh indexer">{formatWazuhIndexed(wazuh.indexed)}</Fact>
-        </dl>
-        <p className="mt-2 text-sm text-muted">
-          Written means this incident_id is in the local Wazuh event log or already present
-          in the indexer from a previous emit. Indexer is a separate lookup of that same id.
-        </p>
-      </Panel>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Panel title={t("detail.wazuh")}>
+          <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+            <Fact label={t("detail.wazuhLog")}>
+              {wazuh.emitted ? t("detail.written") : t("detail.notWritten")}
+            </Fact>
+            <Fact label={t("detail.wazuhIndexer")}>{formatWazuhIndexed(t, wazuh.indexed)}</Fact>
+          </dl>
+          <p className="mt-4 text-sm leading-6 text-muted">{t("detail.wazuhHelp")}</p>
+        </Panel>
+        <Panel title={t("system.sovereignty")}>
+          {system ? (
+            <dl className="grid grid-cols-1 gap-4 text-sm">
+              <Fact label={t("system.cloudInference")}>{String(system.cloudInference)}</Fact>
+              <Fact label={t("system.model")}>
+                <span className="font-mono text-xs">{system.qvac.model}</span>
+              </Fact>
+              <Fact label={t("system.sdk")}>{system.qvac.sdk}</Fact>
+            </dl>
+          ) : (
+            <p className="text-sm text-muted">{t("common.loading")}</p>
+          )}
+        </Panel>
+      </div>
 
-      <Panel title="QVAC">
+      <Panel title={t("detail.qvac")}>
         {qvac.length === 0 ? (
-          <p className="text-sm text-muted">
-            No QVAC row is stored. Local QVAC runs only on ambiguous scores (0.60 ≤ score &lt; 0.75).
-          </p>
+          <p className="text-sm leading-6 text-muted">{t("detail.qvacEmpty")}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {system ? (
               <p className="text-sm text-muted">
-                Local runtime {system.qvac.sdk} / {system.qvac.model}. Cloud inference:{" "}
-                {String(system.cloudInference)}.
+                {t("detail.qvacRuntime", {
+                  sdk: system.qvac.sdk,
+                  model: system.qvac.model,
+                  cloud: String(system.cloudInference),
+                })}
               </p>
             ) : null}
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="text-left text-muted">
-                  <th className="border-b border-line py-2 font-medium">Signal</th>
-                  <th className="border-b border-line py-2 font-medium">Inference</th>
-                  <th className="border-b border-line py-2 font-medium">Classification</th>
-                  <th className="border-b border-line py-2 font-medium">Confidence</th>
-                  <th className="border-b border-line py-2 font-medium">Uncertainty</th>
-                  <th className="border-b border-line py-2 font-medium">Supporting evidence</th>
-                  <th className="border-b border-line py-2 font-medium">Explanation</th>
-                </tr>
-              </thead>
-              <tbody>
-                {qvac.map((result) => {
-                  const signal = signals.find((item) => item.signalId === result.signalId);
-                  const explanation = qvacExplanation(result.assessment?.rationale);
-                  const modelToken = qvacConfidenceToken(
-                    result.assessment?.rationale,
-                    result.assessment?.confidence,
-                  );
-                  return (
-                    <tr key={result.signalId}>
-                      <td className="border-b border-line py-2 font-mono text-xs">{result.signalId}</td>
-                      <td className="border-b border-line py-2">{formatEnumLabel(result.status)}</td>
-                      <td className="border-b border-line py-2">
-                        {result.assessment
-                          ? formatEnumLabel(result.assessment.assessment)
-                          : qvacSkipReason(result.status)}
-                      </td>
-                      <td className="border-b border-line py-2">
-                        {formatQvacConfidence(signal?.score, modelToken, result.status)}
-                      </td>
-                      <td className="border-b border-line py-2">
-                        {qvacUncertainty(result.assessment?.assessment, result.status)}
-                      </td>
-                      <td className="border-b border-line py-2">
-                        {result.assessment?.usedEvidence.join(", ") ?? "—"}
-                      </td>
-                      <td className="border-b border-line py-2 text-muted">
-                        {explanation ??
-                          (result.status === "skipped"
-                            ? "Deterministic score is outside the ambiguous band, so the local model was not invoked."
-                            : "No sentence-length rationale was returned.")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            {qvac.map((result) => (
+              <QvacCard
+                key={result.signalId}
+                result={result}
+                signal={signals.find((item) => item.signalId === result.signalId)}
+              />
+            ))}
           </div>
         )}
       </Panel>
 
-      <Panel title="Member evidence">
+      <Panel title={t("detail.evidence")}>
         {signals.length === 0 ? (
-          <EmptyState>
-            No member signals are stored for this incident. Older ClickHouse rows from before signal persistence will not have evidence here.
-          </EmptyState>
+          <EmptyState>{t("detail.noEvidence")}</EmptyState>
         ) : (
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="text-left text-muted">
-                <th className="border-b border-line py-2 font-medium">Type</th>
-                <th className="border-b border-line py-2 font-medium">Score</th>
-                <th className="border-b border-line py-2 font-medium">Severity</th>
-                <th className="border-b border-line py-2 font-medium">Metric</th>
-                <th className="border-b border-line py-2 font-medium">Value</th>
-                <th className="border-b border-line py-2 font-medium">Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              {signals.flatMap((signal) =>
-                signal.evidence.map((item, index) => (
-                  <tr key={`${signal.signalId}-${item.metric}-${index}`}>
-                    <td className="border-b border-line py-2">
-                      {index === 0 ? formatEnumLabel(signal.type) : ""}
-                    </td>
-                    <td className="border-b border-line py-2 tabular-nums">
-                      {index === 0 ? formatPercent(signal.score) : ""}
-                    </td>
-                    <td className={`border-b border-line py-2 ${severityClass(signal.severityHint)}`}>
-                      {index === 0 ? formatEnumLabel(signal.severityHint) : ""}
-                    </td>
-                    <td className="border-b border-line py-2 font-mono text-xs">{item.metric}</td>
-                    <td className="border-b border-line py-2 tabular-nums">
-                      {formatEvidenceValue(item.metric, item.value)}
-                    </td>
-                    <td className="border-b border-line py-2 text-muted">{item.reason}</td>
-                  </tr>
-                )),
-              )}
-            </tbody>
-          </table>
+          <div className="space-y-4">
+            {signals.map((signal) => (
+              <article
+                key={signal.signalId}
+                className="rounded-2xl border border-line bg-surface-subtle/50 px-4 py-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-medium text-ink">
+                    {translateKnown(t, "enum", signal.type)}
+                  </h3>
+                  <SeverityBadge severity={signal.severityHint} />
+                  <span className="text-xs tabular-nums text-muted">
+                    {t("common.score")} {formatPercent(signal.score)}
+                  </span>
+                </div>
+                <ul className="mt-3 space-y-2">
+                  {signal.evidence.map((item, index) => (
+                    <li
+                      key={`${signal.signalId}-${item.metric}-${index}`}
+                      className="grid gap-1 border-t border-line/80 pt-2 text-sm sm:grid-cols-[12rem_8rem_minmax(0,1fr)] sm:gap-3"
+                    >
+                      <span className="font-medium text-ink">
+                        {translateKnown(t, "metric", item.metric)}
+                      </span>
+                      <span className="tabular-nums text-ink">
+                        {typeof item.value === "boolean"
+                          ? item.value
+                            ? t("common.yes")
+                            : t("common.no")
+                          : formatEvidenceValue(item.metric, item.value)}
+                      </span>
+                      <span className="text-muted">{item.reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
         )}
       </Panel>
 
-      <Panel title="Site window context">
+      <Panel title={t("detail.siteWindow")}>
         {detail.currentWindow ? (
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm lg:grid-cols-3">
-            <Fact label="Bucket">{formatTime(detail.currentWindow.bucketStart)}</Fact>
-            <Fact label="Queries">{detail.currentWindow.queryCount}</Fact>
-            <Fact label="NXDOMAIN ratio">{formatPercent(detail.currentWindow.nxdomainRatio)}</Fact>
-            <Fact label="Latency p95">{formatLatencyMs(detail.currentWindow.latencyP95)}</Fact>
-            <Fact label="Saturation">{formatPercent(detail.currentWindow.saturation)}</Fact>
-            <Fact label="Prior NXDOMAIN mean">
-              {detail.priorNxdomainRatioMean === undefined
-                ? "No prior windows"
-                : formatPercent(detail.priorNxdomainRatioMean)}
-            </Fact>
-            <Fact label="Prior latency p95 mean">
-              {detail.priorLatencyP95Mean === undefined
-                ? "No prior windows"
-                : formatLatencyMs(detail.priorLatencyP95Mean)}
-            </Fact>
-          </dl>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div>
+              <h3 className="mb-3 text-sm font-medium text-ink">{t("detail.current")}</h3>
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <Fact label={t("detail.bucket")}>
+                  {formatTime(detail.currentWindow.bucketStart)}
+                </Fact>
+                <Fact label={t("detail.queries")}>{detail.currentWindow.queryCount}</Fact>
+                <Fact label={t("detail.nxdomain")}>
+                  {formatPercent(detail.currentWindow.nxdomainRatio)}
+                </Fact>
+                <Fact label={t("detail.latencyP95")}>
+                  {formatLatencyMs(detail.currentWindow.latencyP95)}
+                </Fact>
+                <Fact label={t("detail.saturation")}>
+                  {formatPercent(detail.currentWindow.saturation)}
+                </Fact>
+              </dl>
+            </div>
+            <div>
+              <h3 className="mb-3 text-sm font-medium text-ink">{t("detail.baseline")}</h3>
+              <dl className="grid grid-cols-1 gap-4 text-sm">
+                <Fact label={t("detail.priorNx")}>
+                  {detail.priorNxdomainRatioMean === undefined
+                    ? t("detail.noPrior")
+                    : formatPercent(detail.priorNxdomainRatioMean)}
+                </Fact>
+                <Fact label={t("detail.priorLat")}>
+                  {detail.priorLatencyP95Mean === undefined
+                    ? t("detail.noPrior")
+                    : formatLatencyMs(detail.priorLatencyP95Mean)}
+                </Fact>
+              </dl>
+            </div>
+          </div>
         ) : (
-          <EmptyState>
-            No site-window metrics are stored for this incident's site yet.
-          </EmptyState>
+          <EmptyState>{t("detail.noWindow")}</EmptyState>
         )}
       </Panel>
     </div>
   );
 }
 
-function formatWazuhIndexed(state: "yes" | "no" | "unknown"): string {
+function QvacCard({
+  result,
+  signal,
+}: {
+  result: QvacResult;
+  signal: Signal | undefined;
+}) {
+  const { t } = useI18n();
+  const explanation = qvacExplanation(result.assessment?.rationale);
+  const modelToken = qvacConfidenceToken(
+    result.assessment?.rationale,
+    result.assessment?.confidence,
+  );
+  return (
+    <article className="rounded-2xl border border-line bg-canvas px-4 py-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-medium text-brand">
+          {translateKnown(t, "enum", result.status)}
+        </span>
+        <span className="font-mono text-[11px] text-muted">{result.signalId}</span>
+      </div>
+      <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+        <Fact label={t("detail.classification")}>
+          {result.assessment
+            ? translateKnown(t, "enum", result.assessment.assessment)
+            : qvacSkipReason(t, result.status)}
+        </Fact>
+        <Fact label={t("common.confidence")}>
+          {formatQvacConfidence(t, signal?.score, modelToken, result.status)}
+        </Fact>
+        <Fact label={t("detail.uncertainty")}>
+          {qvacUncertainty(t, result.assessment?.assessment, result.status)}
+        </Fact>
+      </dl>
+      <div className="mt-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+          {t("detail.explanation")}
+        </p>
+        <p className="mt-1.5 text-sm leading-6 text-ink">
+          {explanation ??
+            (result.status === "skipped" ? t("detail.skippedExplanation") : t("detail.noRationale"))}
+        </p>
+      </div>
+      {result.assessment?.usedEvidence.length ? (
+        <div className="mt-4">
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+            {t("detail.supportingEvidence")}
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {result.assessment.usedEvidence.map((metric) => (
+              <li
+                key={metric}
+                className="rounded-full bg-surface-subtle px-2.5 py-0.5 text-xs text-ink"
+              >
+                {translateKnown(t, "metric", metric)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function formatWazuhIndexed(t: Translate, state: "yes" | "no" | "unknown"): string {
   if (state === "yes") {
-    return "Found";
+    return t("detail.found");
   }
   if (state === "no") {
-    return "Not found";
+    return t("detail.notFound");
   }
-  return "Lookup failed";
+  return t("detail.lookupFailed");
 }
 
 function formatQvacConfidence(
+  t: Translate,
   score: number | undefined,
   modelToken: string | undefined,
   status: string,
 ): string {
   if (status === "skipped") {
-    return score === undefined ? "—" : `${formatPercent(score)} (deterministic)`;
+    return score === undefined ? t("common.emDash") : t("detail.deterministic", { pct: formatPercent(score) });
   }
   const parts: string[] = [];
   if (score !== undefined) {
     parts.push(formatPercent(score));
   }
   if (modelToken) {
-    parts.push(`model token ${formatEnumLabel(modelToken)}`);
+    parts.push(t("detail.modelToken", { token: translateKnown(t, "enum", modelToken) }));
   }
-  return parts.length > 0 ? parts.join(" · ") : "—";
+  return parts.length > 0 ? parts.join(" · ") : t("common.emDash");
 }
 
-function qvacSkipReason(status: string): string {
+function qvacSkipReason(t: Translate, status: string): string {
   if (status === "skipped") {
-    return "Not invoked";
+    return t("detail.notInvoked");
   }
-  return "—";
+  return t("common.emDash");
 }
 
-function qvacUncertainty(assessment: string | undefined, status: string): string {
+function qvacUncertainty(t: Translate, assessment: string | undefined, status: string): string {
   if (status === "skipped") {
-    return "None — deterministic path";
+    return t("detail.uncertaintyNone");
   }
   if (assessment === "uncertain" || assessment === "insufficient_evidence") {
-    return formatEnumLabel(assessment);
+    return translateKnown(t, "enum", assessment);
   }
   if (assessment === "consistent") {
-    return "Low — evidence matches the rule";
+    return t("detail.uncertaintyLow");
   }
   if (status === "invalid" || status === "unavailable") {
-    return formatEnumLabel(status);
+    return translateKnown(t, "enum", status);
   }
-  return "—";
-}
-
-function Fact({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
-      <dd className="mt-0.5">{children}</dd>
-    </div>
-  );
+  return t("common.emDash");
 }

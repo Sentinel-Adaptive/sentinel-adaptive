@@ -1,20 +1,66 @@
 @import "tailwindcss";
 
-@theme {
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --sentinel-canvas: #f3f2ee;
+  --sentinel-surface: #ffffff;
+  --sentinel-surface-subtle: #ecebe6;
+  --sentinel-ink: #141413;
+  --sentinel-muted: #6a6a64;
+  --sentinel-line: #e2e1db;
+  --sentinel-brand: #f15a2a;
+  --sentinel-brand-soft: rgb(241 90 42 / 0.12);
+  --sentinel-success: #177245;
+  --sentinel-success-soft: rgb(23 114 69 / 0.12);
+  --sentinel-warning: #a86500;
+  --sentinel-warning-soft: rgb(168 101 0 / 0.12);
+  --sentinel-danger: #b42318;
+  --sentinel-danger-soft: rgb(180 35 24 / 0.12);
+  --sentinel-sidebar: #111110;
+  --sentinel-sidebar-ink: #f4f4f1;
+  --sentinel-shadow: 0 1px 2px rgb(20 20 19 / 0.04), 0 14px 36px rgb(20 20 19 / 0.06);
+}
+
+.dark {
+  --sentinel-canvas: #141413;
+  --sentinel-surface: #1c1c1a;
+  --sentinel-surface-subtle: #232321;
+  --sentinel-ink: #f3f3f0;
+  --sentinel-muted: #9c9c96;
+  --sentinel-line: #2d2d29;
+  --sentinel-brand: #f15a2a;
+  --sentinel-brand-soft: rgb(241 90 42 / 0.16);
+  --sentinel-success: #3d9a68;
+  --sentinel-success-soft: rgb(61 154 104 / 0.16);
+  --sentinel-warning: #d4922a;
+  --sentinel-warning-soft: rgb(212 146 42 / 0.16);
+  --sentinel-danger: #e05a4f;
+  --sentinel-danger-soft: rgb(224 90 79 / 0.16);
+  --sentinel-sidebar: #0c0c0b;
+  --sentinel-sidebar-ink: #f4f4f1;
+  --sentinel-shadow: 0 1px 2px rgb(0 0 0 / 0.28), 0 16px 40px rgb(0 0 0 / 0.28);
+}
+
+@theme inline {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-canvas: #f7f7f5;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #f1f1ee;
-  --color-ink: #111111;
-  --color-muted: #656565;
-  --color-line: #dfdfda;
-  --color-brand: #f15a2a;
-  --color-success: #177245;
-  --color-warning: #a86500;
-  --color-danger: #b42318;
-  --color-info: #315e7d;
-  --color-sidebar: #161615;
-  --color-sidebar-ink: #f4f4f1;
+  --color-canvas: var(--sentinel-canvas);
+  --color-surface: var(--sentinel-surface);
+  --color-surface-subtle: var(--sentinel-surface-subtle);
+  --color-ink: var(--sentinel-ink);
+  --color-muted: var(--sentinel-muted);
+  --color-line: var(--sentinel-line);
+  --color-brand: var(--sentinel-brand);
+  --color-brand-soft: var(--sentinel-brand-soft);
+  --color-success: var(--sentinel-success);
+  --color-success-soft: var(--sentinel-success-soft);
+  --color-warning: var(--sentinel-warning);
+  --color-warning-soft: var(--sentinel-warning-soft);
+  --color-danger: var(--sentinel-danger);
+  --color-danger-soft: var(--sentinel-danger-soft);
+  --color-sidebar: var(--sentinel-sidebar);
+  --color-sidebar-ink: var(--sentinel-sidebar-ink);
+  --shadow-card: var(--sentinel-shadow);
 }
 
 html,
@@ -25,12 +71,17 @@ body,
 
 body {
   margin: 0;
-  background: var(--color-canvas);
-  color: var(--color-ink);
+  background: var(--sentinel-sidebar);
+  color: var(--sentinel-ink);
   font-family: var(--font-sans);
+  font-feature-settings: "ss01" on, "cv11" on;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 2px solid var(--sentinel-brand);
   outline-offset: 2px;
+}
+
+::selection {
+  background: var(--sentinel-brand-soft);
 }

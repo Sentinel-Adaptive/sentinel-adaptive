@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sentinel Adaptive</title>
+    <script>
+      try {
+        if (localStorage.getItem("sentinel-theme") === "dark") {
+          document.documentElement.classList.add("dark");
+        }
+        if (localStorage.getItem("sentinel-locale") === "es") {
+          document.documentElement.lang = "es";
+        }
+      } catch (error) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
