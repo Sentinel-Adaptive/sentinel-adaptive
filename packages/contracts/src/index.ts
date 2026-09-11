@@ -200,6 +200,111 @@ export const wazuhIncidentEventSchema = z
 export type WazuhClassification = z.infer<typeof wazuhClassificationSchema>;
 export type WazuhIncidentEvent = z.infer<typeof wazuhIncidentEventSchema>;
 
+export const simulationModes = [
+  "background",
+  "synthetic",
+  "mixed",
+] as const;
+
+export const simulationModeSchema = z.enum(simulationModes);
+
+export const simulationStatuses = [
+  "queued",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+] as const;
+
+export const simulationStatusSchema = z.enum(simulationStatuses);
+
+export const simulationJobSchema = z
+  .object({
+    id: z.string().uuid(),
+    mode: simulationModeSchema,
+    status: simulationStatusSchema,
+    params: z.record(z.string(), z.unknown()),
+    progress: z.record(z.string(), z.unknown()).default({}),
+    error: z.string().optional(),
+    startedAt: z.iso.datetime({ offset: true }),
+    finishedAt: z.iso.datetime({ offset: true }).optional(),
+  })
+  .strict();
+
+export const datasetStatsSchema = z
+  .object({
+    path: z.string().min(1),
+    generatedAt: z.iso.datetime({ offset: true }),
+    files: z.number().int().nonnegative(),
+    linesRead: z.number().int().nonnegative(),
+    parsed: z.number().int().nonnegative(),
+    skipped: z.number().int().nonnegative(),
+    uniqueClients: z.number().int().nonnegative(),
+    uniqueQnames: z.number().int().nonnegative(),
+    earliestTimestamp: z.iso.datetime({ offset: true }).optional(),
+    latestTimestamp: z.iso.datetime({ offset: true }).optional(),
+    topQnames: z.array(
+      z.object({ value: z.string(), count: z.number().int().nonnegative() }),
+    ),
+    topClients: z.array(
+      z.object({ value: z.string(), count: z.number().int().nonnegative() }),
+    ),
+    qtypeCounts: z.record(z.string(), z.number().int().nonnegative()),
+    fileStats: z.array(
+      z.object({
+        file: z.string(),
+        lines: z.number().int().nonnegative(),
+        parsed: z.number().int().nonnegative(),
+        skipped: z.number().int().nonnegative(),
+      }),
+    ),
+  })
+  .strict();
+
+export const backgroundSimulationRequestSchema = z
+  .object({
+    path: z.string().min(1).optional(),
+    limit: z.number().int().positive().max(1_000_000).default(10_000),
+    intervalMs: z.number().int().nonnegative().default(0),
+  })
+  .strict();
+
+export const syntheticSimulationRequestSchema = z
+  .object({
+    scenario: scenarioTagSchema,
+    siteId: siteIdSchema.optional(),
+    count: z.number().int().positive().max(100_000).default(30),
+    seed: z.number().int().nonnegative().optional(),
+    intervalMs: z.number().int().nonnegative().default(25),
+  })
+  .strict();
+
+export const mixedSimulationRequestSchema = z
+  .object({
+    path: z.string().min(1).optional(),
+    realLimit: z.number().int().positive().max(1_000_000).default(10_000),
+    burstScenario: scenarioTagSchema.default("beacon"),
+    burstCount: z.number().int().positive().max(10_000).default(6),
+    burstEvery: z.number().int().positive().max(1_000_000).default(1_000),
+    intervalMs: z.number().int().nonnegative().default(0),
+    siteId: siteIdSchema.optional(),
+  })
+  .strict();
+
+export type SimulationMode = z.infer<typeof simulationModeSchema>;
+export type SimulationStatus = z.infer<typeof simulationStatusSchema>;
+export type SimulationJob = z.infer<typeof simulationJobSchema>;
+export type DatasetStats = z.infer<typeof datasetStatsSchema>;
+export type BackgroundSimulationRequest = z.infer<
+  typeof backgroundSimulationRequestSchema
+>;
+export type SyntheticSimulationRequest = z.infer<
+  typeof syntheticSimulationRequestSchema
+>;
+export type MixedSimulationRequest = z.infer<
+  typeof mixedSimulationRequestSchema
+>;
+
 export const qvacAmbiguousMin = 0.6;
 export const qvacAmbiguousMax = 0.75;
 

@@ -13,3 +13,10 @@ export {
   type ReplayStats,
 } from "./replay.js";
 export { readQueryLines, type SourceLine } from "./stream.js";
+export {
+  computeDatasetStats,
+  writeDatasetStatsCache,
+  type CountedExample,
+  type DatasetStats,
+  type FileStat,
+} from "./stats.js";

@@ -5,24 +5,35 @@ import {
   generateScenario,
   publishDnsEvents,
 } from "@sentinel-adaptive/generator";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { consumeTopicRange, readTopicOffsets } from "./kafka-offsets.js";
 import { replayOvnicomLogs } from "./replay.js";
 
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "..",
+);
+
+function resolveDatasetPath(input?: string): string {
+  const trimmed = input?.trim() ?? "";
+  if (!trimmed) {
+    return path.resolve(repoRoot, "data/ovnicom/LogsDNSQueries");
+  }
+  return path.isAbsolute(trimmed) ? trimmed : path.resolve(repoRoot, trimmed);
+}
+
 const broker = process.env.KAFKA_BROKER ?? defaultKafkaBroker;
 const topic = process.env.KAFKA_TOPIC ?? defaultKafkaTopic;
-const datasetPath = process.env.OVNICOM_DATASET_PATH;
+const datasetPath = resolveDatasetPath(process.env.OVNICOM_DATASET_PATH);
 const limit = 10_000;
 const dgaSeed = 3_500_350;
 const dgaCount = 20;
 
 try {
-  if (!datasetPath || datasetPath.trim().length === 0) {
-    throw new Error(
-      "OVNICOM_DATASET_PATH must point at the local challenge dataset for smoke:ovnicom.",
-    );
-  }
-
   await publishDnsEvents([], { broker, topic, intervalMs: 0 });
 
   const replayBefore = readTopicOffsets(topic);

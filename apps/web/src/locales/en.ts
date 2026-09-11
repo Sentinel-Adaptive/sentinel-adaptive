@@ -199,6 +199,76 @@ export const en = {
   "metric.editDistance": "Edit distance",
   "metric.latencyP95": "Latency p95",
   "metric.baselineMean": "Baseline mean",
+
+  "nav.simulation": "Simulation",
+
+  "simulation.title": "Simulation",
+  "simulation.description":
+    "Replay the Ovnicom challenge logs, inject synthetic attack scenarios, or mix both to exercise the local pipeline end-to-end.",
+  "simulation.dataset.title": "Dataset",
+  "simulation.dataset.notConfigured":
+    "Dataset not configured. Set OVNICOM_DATASET_PATH or extract the challenge logs to data/ovnicom/LogsDNSQueries.",
+  "simulation.dataset.files": "Files",
+  "simulation.dataset.lines": "Lines",
+  "simulation.dataset.parsed": "Parsed",
+  "simulation.dataset.skipped": "Skipped",
+  "simulation.dataset.clients": "Unique clients",
+  "simulation.dataset.qnames": "Unique QNAMEs",
+  "simulation.dataset.earliest": "Earliest",
+  "simulation.dataset.latest": "Latest",
+  "simulation.dataset.topQnames": "Top QNAMEs",
+  "simulation.dataset.topClients": "Top clients",
+  "simulation.dataset.refresh": "Refresh stats",
+
+  "simulation.mode": "Mode",
+  "simulation.mode.background": "Background replay",
+  "simulation.mode.synthetic": "Synthetic injection",
+  "simulation.mode.mixed": "Mixed real + attack",
+  "simulation.mode.backgroundHint":
+    "Stream real BIND query logs as a passive consumer without modifying the original traffic.",
+  "simulation.mode.syntheticHint":
+    "Publish one of the labeled Sentinel scenarios to demonstrate detection.",
+  "simulation.mode.mixedHint":
+    "Replay real logs and inject synthetic attack bursts on top of the live stream.",
+
+  "simulation.scenario.label": "Scenario",
+  "simulation.scenario.normal": "Normal",
+  "simulation.scenario.background": "Background",
+  "simulation.scenario.dga": "DGA",
+  "simulation.scenario.tunnel": "DNS tunneling",
+  "simulation.scenario.beacon": "C2 beaconing",
+  "simulation.scenario.ambiguous-beacon": "Ambiguous beacon",
+  "simulation.scenario.typosquat": "Typosquatting",
+  "simulation.scenario.degrade-qoe": "QoE degradation",
+  "simulation.scenario.saturation": "Saturation",
+  "simulation.scenario.combined": "Combined",
+
+  "simulation.site.label": "Site",
+  "simulation.site.all": "Auto (round-robin)",
+
+  "simulation.limit.label": "Real event limit",
+  "simulation.count.label": "Event count",
+  "simulation.intervalMs.label": "Publish interval (ms)",
+  "simulation.seed.label": "Seed",
+  "simulation.burstScenario.label": "Burst scenario",
+  "simulation.burstCount.label": "Events per burst",
+  "simulation.burstEvery.label": "Inject burst every N real events",
+
+  "simulation.start": "Start",
+  "simulation.stop": "Stop",
+  "simulation.running": "Running",
+  "simulation.completed": "Completed",
+  "simulation.failed": "Failed",
+  "simulation.queued": "Queued",
+  "simulation.cancelled": "Cancelled",
+  "simulation.noJobs": "No simulation jobs yet.",
+  "simulation.jobs.title": "Jobs",
+  "simulation.jobs.id": "ID",
+  "simulation.jobs.mode": "Mode",
+  "simulation.jobs.status": "Status",
+  "simulation.jobs.progress": "Progress",
+  "simulation.jobs.started": "Started",
+  "simulation.jobs.finished": "Finished",
 } as const;
 
 export type MessageKey = keyof typeof en;

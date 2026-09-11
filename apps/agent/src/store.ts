@@ -7,19 +7,22 @@ import {
   type Incident,
   type QvacResult,
   type Signal,
+  type SimulationJob,
   type SiteId,
   type SiteWindowMetrics,
 } from "@sentinel-adaptive/contracts";
 
 export type OperatorEvent =
   | { type: "incident"; incidentId: string }
-  | { type: "qvac"; signalId: string };
+  | { type: "qvac"; signalId: string }
+  | { type: "job"; jobId: string };
 
 export class OperatorStore {
   private readonly incidents = new Map<string, Incident>();
   private readonly signals = new Map<string, Signal>();
   private readonly qvac = new Map<string, QvacResult>();
   private readonly wazuhEmitted = new Set<string>();
+  private readonly jobs = new Map<string, SimulationJob>();
   private readonly listeners = new Set<(event: OperatorEvent) => void>();
 
   recordIncidents(incidents: readonly Incident[], members: readonly Signal[]): void {
@@ -45,6 +48,22 @@ export class OperatorStore {
     for (const incidentId of incidentIds) {
       this.wazuhEmitted.add(incidentId);
     }
+  }
+
+  recordJob(job: SimulationJob): void {
+    this.jobs.set(job.id, job);
+    this.emit({ type: "job", jobId: job.id });
+  }
+
+  listJobs(): SimulationJob[] {
+    return [...this.jobs.values()].sort(
+      (left, right) =>
+        Date.parse(right.startedAt) - Date.parse(left.startedAt),
+    );
+  }
+
+  getJob(jobId: string): SimulationJob | undefined {
+    return this.jobs.get(jobId);
   }
 
   listIncidents(): Incident[] {

@@ -1,5 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { LayoutDashboard, Moon, Server, ShieldAlert, Sun } from "lucide-react";
+import {
+  LayoutDashboard,
+  Moon,
+  Play,
+  Server,
+  ShieldAlert,
+  Sun,
+} from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { useI18n, type Locale } from "./i18n.js";
@@ -8,6 +15,7 @@ import { useTheme } from "./theme.js";
 const nav = [
   { to: "/", key: "nav.overview", icon: LayoutDashboard, end: true },
   { to: "/incidents", key: "nav.incidents", icon: ShieldAlert, end: false },
+  { to: "/simulation", key: "nav.simulation", icon: Play, end: false },
   { to: "/system", key: "nav.system", icon: Server, end: false },
 ] as const;
 

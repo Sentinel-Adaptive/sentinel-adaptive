@@ -3,7 +3,12 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { SystemStatus } from "@sentinel-adaptive/contracts";
+import {
+  backgroundSimulationRequestSchema,
+  mixedSimulationRequestSchema,
+  syntheticSimulationRequestSchema,
+  type SystemStatus,
+} from "@sentinel-adaptive/contracts";
 
 import {
   buildIncidentDetail,
@@ -13,6 +18,7 @@ import {
   parseSiteId,
   readIncidents,
 } from "./api-read.js";
+import { simulationJobs } from "./jobs.js";
 import { OperatorStore } from "./store.js";
 
 const root = path.resolve(
@@ -60,6 +66,57 @@ export async function handleOperatorRequest(
     }
     if (request.method === "GET" && url.pathname === "/api/events") {
       sse(request, response, store);
+      return;
+    }
+    if (request.method === "GET" && url.pathname === "/api/simulation/jobs") {
+      json(response, 200, store.listJobs());
+      return;
+    }
+    const jobMatch = /^\/api\/simulation\/jobs\/([^/]+)$/.exec(url.pathname);
+    if (request.method === "GET" && jobMatch?.[1]) {
+      const job = store.getJob(jobMatch[1]);
+      if (!job) {
+        json(response, 404, { error: "job not found" });
+        return;
+      }
+      json(response, 200, job);
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/simulation/jobs/cancel") {
+      const body = await readJsonBody(request);
+      const jobId = typeof body === "object" && body !== null && "id" in body ? String(body.id) : "";
+      const job = jobId ? simulationJobs.cancel(jobId) : undefined;
+      if (!job) {
+        json(response, 404, { error: "job not found" });
+        return;
+      }
+      json(response, 200, job);
+      return;
+    }
+    if (request.method === "GET" && url.pathname === "/api/simulation/dataset") {
+      const stats = await simulationJobs.getDatasetStats();
+      json(response, 200, stats);
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/simulation/background") {
+      const body = await readJsonBody(request);
+      const request_ = backgroundSimulationRequestSchema.parse(body);
+      const job = await simulationJobs.startBackground(request_);
+      json(response, 202, job);
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/simulation/synthetic") {
+      const body = await readJsonBody(request);
+      const request_ = syntheticSimulationRequestSchema.parse(body);
+      const job = await simulationJobs.startSynthetic(request_);
+      json(response, 202, job);
+      return;
+    }
+    if (request.method === "POST" && url.pathname === "/api/simulation/mixed") {
+      const body = await readJsonBody(request);
+      const request_ = mixedSimulationRequestSchema.parse(body);
+      const job = await simulationJobs.startMixed(request_);
+      json(response, 202, job);
       return;
     }
     const incidentMatch = /^\/api\/incidents\/([^/]+)$/.exec(url.pathname);
@@ -180,8 +237,26 @@ function serviceState(
 
 function cors(response: ServerResponse): void {
   response.setHeader("access-control-allow-origin", "*");
-  response.setHeader("access-control-allow-methods", "GET,OPTIONS");
+  response.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
   response.setHeader("access-control-allow-headers", "content-type");
+}
+
+async function readJsonBody(request: IncomingMessage): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    request.setEncoding("utf8");
+    request.on("data", (chunk: string) => {
+      body += chunk;
+    });
+    request.on("end", () => {
+      try {
+        resolve(body.length > 0 ? JSON.parse(body) : {});
+      } catch {
+        reject(new Error("Invalid JSON body"));
+      }
+    });
+    request.on("error", reject);
+  });
 }
 
 function json(response: ServerResponse, status: number, body: unknown): void {

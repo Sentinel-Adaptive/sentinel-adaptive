@@ -53,6 +53,7 @@
     "demo:saturation": "npm run generate -w @sentinel-adaptive/generator -- saturation",
     "demo:combined": "npm run generate -w @sentinel-adaptive/generator -- combined",
     "ovnicom:replay": "npm run replay -w @sentinel-adaptive/ovnicom-replay --",
+    "ovnicom:stats": "npm run replay -w @sentinel-adaptive/ovnicom-replay -- --stats",
     "smoke:ovnicom": "npm run smoke -w @sentinel-adaptive/ovnicom-replay"
   },
   "devDependencies": {

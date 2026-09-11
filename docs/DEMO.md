@@ -27,6 +27,21 @@ Confirm:
 - Operator API: `http://127.0.0.1:3001/api/system` shows `cloudInference: false`
 - UI: `http://127.0.0.1:5173`
 
+## Optional live simulation (instead of seed)
+
+The `/simulation` page can replay the Ovnicom challenge logs, inject labeled synthetic attack scenarios, or mix both. This is useful when you want to demonstrate live-stream classification against real DNS background traffic.
+
+Suggested settings:
+
+- Mode: **Mixed real + attack**
+- Real event limit: `10_000`
+- Burst scenario: `beacon`
+- Events per burst: `6`
+- Inject every: `1_000` real events
+- Publish interval: `0`
+
+Then switch to `/` and watch incidents appear in real time. Incident ids will differ from the seeded ids below, so use the ids shown in the UI.
+
 Expected seed incidents (deterministic from the demo fixtures):
 
 | Incident | Site | QVAC |

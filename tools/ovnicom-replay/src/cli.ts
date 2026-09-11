@@ -1,4 +1,27 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { defaultReplayLimit, replayOvnicomLogs } from "./replay.js";
+import {
+  computeDatasetStats,
+  writeDatasetStatsCache,
+  type DatasetStats,
+} from "./stats.js";
+
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "..",
+);
+
+function resolveDatasetPath(input: string): string {
+  const trimmed = input.trim();
+  if (path.isAbsolute(trimmed)) {
+    return trimmed;
+  }
+  return path.resolve(repoRoot, trimmed);
+}
 
 const usage = `Usage: npm run ovnicom:replay -- [options]
 
@@ -11,6 +34,8 @@ Options:
   --interval-ms <number>   Delay between Kafka publishes (default: 0)
   --broker <host:port>     Kafka broker (default: localhost:9092)
   --topic <name>           Kafka topic (default: dns.telemetry)
+  --stats                  Compute dataset statistics and write cache without publishing
+  --cache <path>           Stats cache output path (default: <dataset-path>/../dataset-stats.json)
   --dry-run                Parse and count without publishing`;
 
 function parseInteger(value: string | undefined, option: string): number {
@@ -20,6 +45,18 @@ function parseInteger(value: string | undefined, option: string): number {
   return Number(value);
 }
 
+function defaultDatasetPath(): string {
+  return resolveDatasetPath(
+    process.env.OVNICOM_DATASET_PATH ?? "data/ovnicom/LogsDNSQueries",
+  );
+}
+
+function defaultCachePath(datasetPath: string): string {
+  const resolved = path.resolve(datasetPath);
+  const parent = path.dirname(resolved);
+  return path.join(parent, "dataset-stats.json");
+}
+
 function parseArguments(arguments_: readonly string[]): {
   path: string;
   limit: number;
@@ -27,21 +64,25 @@ function parseArguments(arguments_: readonly string[]): {
   broker?: string;
   topic?: string;
   dryRun: boolean;
+  stats: boolean;
+  cache?: string;
 } {
   const options = {
-    path: process.env.OVNICOM_DATASET_PATH ?? "",
+    path: defaultDatasetPath(),
     limit: defaultReplayLimit,
     intervalMs: 0,
     broker: undefined as string | undefined,
     topic: undefined as string | undefined,
     dryRun: false,
+    stats: false,
+    cache: undefined as string | undefined,
   };
 
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
     switch (argument) {
       case "--path":
-        options.path = arguments_[index + 1] ?? "";
+        options.path = resolveDatasetPath(arguments_[index + 1] ?? "");
         index += 1;
         break;
       case "--limit":
@@ -60,6 +101,13 @@ function parseArguments(arguments_: readonly string[]): {
         options.topic = arguments_[index + 1];
         index += 1;
         break;
+      case "--stats":
+        options.stats = true;
+        break;
+      case "--cache":
+        options.cache = arguments_[index + 1];
+        index += 1;
+        break;
       case "--dry-run":
         options.dryRun = true;
         break;
@@ -69,10 +117,16 @@ function parseArguments(arguments_: readonly string[]): {
   }
 
   if (options.path.trim().length === 0) {
-    throw new Error(`Dataset path is required via --path or OVNICOM_DATASET_PATH.\n${usage}`);
+    throw new Error(
+      `Dataset path is required via --path or OVNICOM_DATASET_PATH.\n${usage}`,
+    );
   }
 
   return options;
+}
+
+function printStats(stats: DatasetStats): void {
+  console.log(JSON.stringify(stats, null, 2));
 }
 
 try {
@@ -81,12 +135,27 @@ try {
     console.log(usage);
   } else {
     const options = parseArguments(arguments_);
-    const stats = await replayOvnicomLogs(options);
-    console.log(
-      `${options.dryRun ? "Parsed" : "Published"} ${stats.published} ovnicom-challenge events ` +
-        `(skipped ${stats.skipped}, files ${stats.files}, lines ${stats.linesRead}) ` +
-        `to ${stats.topic}.`,
-    );
+
+    if (options.stats) {
+      const stats = await computeDatasetStats(options.path);
+      const cachePath = options.cache ?? defaultCachePath(options.path);
+      writeDatasetStatsCache(stats, cachePath);
+      printStats(stats);
+    } else {
+      const stats = await replayOvnicomLogs({
+        path: options.path,
+        limit: options.limit,
+        intervalMs: options.intervalMs,
+        broker: options.broker,
+        topic: options.topic,
+        dryRun: options.dryRun,
+      });
+      console.log(
+        `${options.dryRun ? "Parsed" : "Published"} ${stats.published} ovnicom-challenge events ` +
+          `(skipped ${stats.skipped}, files ${stats.files}, lines ${stats.linesRead}) ` +
+          `to ${stats.topic}.`,
+      );
+    }
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
