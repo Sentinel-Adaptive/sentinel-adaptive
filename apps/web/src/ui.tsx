@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 
 import { formatPercent, formatTime } from "./format.js";
 import { translateKnown, useI18n } from "./i18n.js";
+import { translateIncidentSummary } from "./operator-copy.js";
 
 export function PageHeader({
   title,
@@ -211,7 +212,7 @@ export function IncidentList({
               </p>
               {showSummary ? (
                 <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">
-                  {incident.summary}
+                  {translateIncidentSummary(t, incident.summary)}
                 </p>
               ) : null}
             </div>

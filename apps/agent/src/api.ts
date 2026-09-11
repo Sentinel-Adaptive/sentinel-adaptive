@@ -100,21 +100,27 @@ export async function handleOperatorRequest(
     }
     if (request.method === "POST" && url.pathname === "/api/simulation/background") {
       const body = await readJsonBody(request);
-      const request_ = backgroundSimulationRequestSchema.parse(body);
+      const request_ = backgroundSimulationRequestSchema.parse(
+        stripEmptySimulationFields(body),
+      );
       const job = await simulationJobs.startBackground(request_);
       json(response, 202, job);
       return;
     }
     if (request.method === "POST" && url.pathname === "/api/simulation/synthetic") {
       const body = await readJsonBody(request);
-      const request_ = syntheticSimulationRequestSchema.parse(body);
+      const request_ = syntheticSimulationRequestSchema.parse(
+        stripEmptySimulationFields(body),
+      );
       const job = await simulationJobs.startSynthetic(request_);
       json(response, 202, job);
       return;
     }
     if (request.method === "POST" && url.pathname === "/api/simulation/mixed") {
       const body = await readJsonBody(request);
-      const request_ = mixedSimulationRequestSchema.parse(body);
+      const request_ = mixedSimulationRequestSchema.parse(
+        stripEmptySimulationFields(body),
+      );
       const job = await simulationJobs.startMixed(request_);
       json(response, 202, job);
       return;
@@ -239,6 +245,17 @@ function cors(response: ServerResponse): void {
   response.setHeader("access-control-allow-origin", "*");
   response.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
   response.setHeader("access-control-allow-headers", "content-type");
+}
+
+function stripEmptySimulationFields(body: unknown): unknown {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return body;
+  }
+  const copy = { ...(body as Record<string, unknown>) };
+  if (copy.siteId === "" || copy.siteId === null) {
+    delete copy.siteId;
+  }
+  return copy;
 }
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {

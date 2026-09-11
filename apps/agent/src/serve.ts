@@ -1,3 +1,4 @@
+import "./load-env.js";
 import { consumeDnsStream } from "./consumer.js";
 import { listenOperatorApi } from "./api.js";
 import { ensureTelemetrySchema } from "./clickhouse.js";

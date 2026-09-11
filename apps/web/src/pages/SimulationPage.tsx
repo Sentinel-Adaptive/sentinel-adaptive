@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   scenarioTags,
   siteIds,
@@ -15,6 +15,7 @@ import { postJson } from "../api.js";
 import { formatTime } from "../format.js";
 import { useI18n } from "../i18n.js";
 import { type MessageKey } from "../locales/en.js";
+import { translateSimulationError } from "../operator-copy.js";
 import {
   EmptyState,
   ErrorBanner,
@@ -28,6 +29,24 @@ import { useJson } from "../use-json.js";
 const modes: SimulationMode[] = ["background", "synthetic", "mixed"];
 const scenarioOptions: string[] = [...scenarioTags];
 const siteOptions: string[] = ["", ...siteIds];
+
+const demoMixed: MixedSimulationRequest = {
+  realLimit: 3_000,
+  burstScenario: "beacon",
+  burstCount: 6,
+  burstEvery: 500,
+  intervalMs: 1,
+  siteId: "PTY-HEALTH-01",
+};
+
+function omitEmptySite<T extends { siteId?: string }>(body: T): T {
+  if (body.siteId) {
+    return body;
+  }
+  const copy = { ...body };
+  delete copy.siteId;
+  return copy;
+}
 
 export function SimulationPage() {
   const { t } = useI18n();
@@ -45,23 +64,18 @@ export function SimulationPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [background, setBackground] = useState<BackgroundSimulationRequest>({
-    limit: 10_000,
-    intervalMs: 0,
+    limit: 3_000,
+    intervalMs: 1,
   });
 
   const [synthetic, setSynthetic] = useState<SyntheticSimulationRequest>({
     scenario: "beacon",
-    count: 60,
-    intervalMs: 25,
-  });
-
-  const [mixed, setMixed] = useState<MixedSimulationRequest>({
-    realLimit: 10_000,
-    burstScenario: "beacon",
-    burstCount: 6,
-    burstEvery: 1_000,
+    siteId: "PTY-HEALTH-01",
+    count: 12,
     intervalMs: 0,
   });
+
+  const [mixed, setMixed] = useState<MixedSimulationRequest>(demoMixed);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -78,6 +92,11 @@ export function SimulationPage() {
     [jobs],
   );
 
+  function applyDemoPreset(): void {
+    setMode("mixed");
+    setMixed({ ...demoMixed });
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setSubmitting(true);
@@ -86,9 +105,12 @@ export function SimulationPage() {
       if (mode === "background") {
         await postJson<SimulationJob>("/api/simulation/background", background);
       } else if (mode === "synthetic") {
-        await postJson<SimulationJob>("/api/simulation/synthetic", synthetic);
+        await postJson<SimulationJob>(
+          "/api/simulation/synthetic",
+          omitEmptySite(synthetic),
+        );
       } else {
-        await postJson<SimulationJob>("/api/simulation/mixed", mixed);
+        await postJson<SimulationJob>("/api/simulation/mixed", omitEmptySite(mixed));
       }
       setTick((value) => value + 1);
     } catch (error) {
@@ -106,6 +128,8 @@ export function SimulationPage() {
       setSubmitError(error instanceof Error ? error.message : String(error));
     }
   }
+
+  const statsComplete = Boolean(stats && (stats.parsed > 0 || stats.earliestTimestamp));
 
   return (
     <div>
@@ -125,80 +149,93 @@ export function SimulationPage() {
           <EmptyState>{t("simulation.dataset.notConfigured")}</EmptyState>
         ) : (
           <div className="space-y-4">
+            {!statsComplete ? (
+              <p className="text-sm text-muted">{t("simulation.dataset.statsPending")}</p>
+            ) : null}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 label={t("simulation.dataset.files")}
                 value={String(stats.files)}
               />
-              <StatCard
-                label={t("simulation.dataset.lines")}
-                value={stats.linesRead.toLocaleString()}
-              />
-              <StatCard
-                label={t("simulation.dataset.parsed")}
-                value={stats.parsed.toLocaleString()}
-              />
-              <StatCard
-                label={t("simulation.dataset.skipped")}
-                value={stats.skipped.toLocaleString()}
-              />
-              <StatCard
-                label={t("simulation.dataset.clients")}
-                value={stats.uniqueClients.toLocaleString()}
-              />
-              <StatCard
-                label={t("simulation.dataset.qnames")}
-                value={stats.uniqueQnames.toLocaleString()}
-              />
-              <StatCard
-                label={t("simulation.dataset.earliest")}
-                value={
-                  stats.earliestTimestamp ? formatTime(stats.earliestTimestamp) : "—"
-                }
-              />
-              <StatCard
-                label={t("simulation.dataset.latest")}
-                value={
-                  stats.latestTimestamp ? formatTime(stats.latestTimestamp) : "—"
-                }
-              />
+              {statsComplete ? (
+                <>
+                  <StatCard
+                    label={t("simulation.dataset.lines")}
+                    value={stats.linesRead.toLocaleString()}
+                  />
+                  <StatCard
+                    label={t("simulation.dataset.parsed")}
+                    value={stats.parsed.toLocaleString()}
+                  />
+                  <StatCard
+                    label={t("simulation.dataset.skipped")}
+                    value={stats.skipped.toLocaleString()}
+                  />
+                  <StatCard
+                    label={t("simulation.dataset.clients")}
+                    value={stats.uniqueClients.toLocaleString()}
+                  />
+                  <StatCard
+                    label={t("simulation.dataset.qnames")}
+                    value={stats.uniqueQnames.toLocaleString()}
+                  />
+                  <StatCard
+                    label={t("simulation.dataset.earliest")}
+                    value={
+                      stats.earliestTimestamp
+                        ? formatTime(stats.earliestTimestamp)
+                        : t("common.emDash")
+                    }
+                  />
+                  <StatCard
+                    label={t("simulation.dataset.latest")}
+                    value={
+                      stats.latestTimestamp
+                        ? formatTime(stats.latestTimestamp)
+                        : t("common.emDash")
+                    }
+                  />
+                </>
+              ) : null}
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <TopList
-                title={t("simulation.dataset.topQnames")}
-                items={stats.topQnames}
-              />
-              <TopList
-                title={t("simulation.dataset.topClients")}
-                items={stats.topClients}
-              />
-            </div>
+            {statsComplete ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <TopList
+                  title={t("simulation.dataset.topQnames")}
+                  items={stats.topQnames}
+                />
+                <TopList
+                  title={t("simulation.dataset.topClients")}
+                  items={stats.topClients}
+                />
+              </div>
+            ) : null}
           </div>
         )}
       </Panel>
 
-      <Panel title={t("simulation.mode") ?? "Mode"} className="mb-6">
+      <Panel title={t("simulation.mode")} className="mb-6">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="flex flex-wrap gap-2">
-            {modes.map((m) => (
+            {modes.map((item) => (
               <button
-                key={m}
+                key={item}
                 type="button"
-                onClick={() => setMode(m)}
+                onClick={() => setMode(item)}
                 className={[
                   "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                  mode === m
+                  mode === item
                     ? "bg-brand text-white"
                     : "border border-line bg-surface text-ink hover:border-brand/30",
                 ].join(" ")}
               >
-                {t(`simulation.mode.${m}`)}
+                {t(`simulation.mode.${item}`)}
               </button>
             ))}
           </div>
 
-          <p className="text-sm text-muted">
+          <p className="max-w-3xl text-sm leading-6 text-muted">
             {t(`simulation.mode.${mode}Hint`)}
           </p>
 
@@ -210,7 +247,7 @@ export function SimulationPage() {
             <MixedFields values={mixed} onChange={setMixed} />
           )}
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="submit"
               disabled={submitting || activeJobs.length > 0}
@@ -222,6 +259,13 @@ export function SimulationPage() {
               ].join(" ")}
             >
               {submitting ? t("simulation.running") : t("simulation.start")}
+            </button>
+            <button
+              type="button"
+              onClick={applyDemoPreset}
+              className="rounded-full border border-line bg-surface px-4 py-2 text-sm font-medium text-ink hover:border-brand/30"
+            >
+              {t("simulation.demoPreset")}
             </button>
             {activeJobs.length > 0 ? (
               <span className="text-xs text-muted">
@@ -305,11 +349,16 @@ function JobRow({
 }) {
   const { t } = useI18n();
   const canCancel = job.status === "queued" || job.status === "running";
+  const errorText = translateSimulationError(t, job.error);
   return (
     <tr>
-      <td className="py-3 pr-4 font-mono text-xs text-ink">{job.id.slice(0, 8)}</td>
-      <td className="py-3 pr-4 text-ink">{t(`simulation.mode.${job.mode}`)}</td>
-      <td className="py-3 pr-4">
+      <td className="py-3 pr-4 align-top font-mono text-xs text-ink">
+        {job.id.slice(0, 8)}
+      </td>
+      <td className="py-3 pr-4 align-top text-ink">
+        {t(`simulation.mode.${job.mode}`)}
+      </td>
+      <td className="py-3 pr-4 align-top">
         <span
           className={[
             "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
@@ -319,16 +368,19 @@ function JobRow({
           {t(`simulation.${job.status}`)}
         </span>
       </td>
-      <td className="py-3 pr-4 text-xs text-muted">
+      <td className="py-3 pr-4 align-top text-xs text-muted">
         <ProgressSummary job={job} />
+        {errorText ? (
+          <p className="mt-1 max-w-sm text-danger">{errorText}</p>
+        ) : null}
       </td>
-      <td className="py-3 pr-4 text-xs text-muted">
+      <td className="py-3 pr-4 align-top text-xs text-muted">
         {formatTime(job.startedAt)}
       </td>
-      <td className="py-3 pr-4 text-xs text-muted">
-        {job.finishedAt ? formatTime(job.finishedAt) : "—"}
+      <td className="py-3 pr-4 align-top text-xs text-muted">
+        {job.finishedAt ? formatTime(job.finishedAt) : t("common.emDash")}
       </td>
-      <td className="py-3 pr-4 text-right">
+      <td className="py-3 pr-4 align-top text-right">
         {canCancel ? (
           <button
             type="button"
@@ -343,20 +395,73 @@ function JobRow({
   );
 }
 
+function asNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
 function ProgressSummary({ job }: { job: SimulationJob }) {
-  const progress = job.progress as Record<string, number | string>;
-  if (job.mode === "background") {
-    return <span>{String(progress.published ?? 0)} events</span>;
-  }
+  const { t } = useI18n();
+  const progress = job.progress;
+  const skipped = asNumber(progress.skipped) ?? 0;
+
   if (job.mode === "synthetic") {
-    return <span>{String(progress.published ?? progress.generated ?? 0)} events</span>;
+    const generated = asNumber(progress.generated) ?? asNumber(job.params.count) ?? 0;
+    const published = asNumber(progress.published) ?? 0;
+    const count = published > 0 ? published : generated;
+    return (
+      <div className="space-y-1.5">
+        <p>{t("simulation.progress.synthetic", { count })}</p>
+        <ProgressBar current={published} total={generated} />
+      </div>
+    );
   }
+
+  const published =
+    asNumber(progress.datasetPublished) ??
+    asNumber(progress.published) ??
+    asNumber(progress.realPublished) ??
+    0;
+  const total =
+    asNumber(progress.limit) ??
+    asNumber(job.params.limit) ??
+    asNumber(job.params.realLimit) ??
+    0;
+  const syntheticCount = asNumber(progress.syntheticPublished) ?? 0;
+  const bursts = asNumber(progress.burstsInjected) ?? 0;
+
   return (
-    <span>
-      real {String(progress.realPublished ?? 0)} / synth{" "}
-      {String(progress.syntheticPublished ?? 0)} / bursts{" "}
-      {String(progress.burstsInjected ?? 0)}
-    </span>
+    <div className="space-y-1.5">
+      {total > 0 ? (
+        <p>{t("simulation.progress.dataset", { published, total })}</p>
+      ) : (
+        <p>{t("simulation.progress.unknown")}</p>
+      )}
+      {job.mode === "mixed" ? (
+        <>
+          <p>{t("simulation.progress.synthetic", { count: syntheticCount })}</p>
+          <p>{t("simulation.progress.bursts", { count: bursts })}</p>
+        </>
+      ) : null}
+      {skipped > 0 ? (
+        <p>{t("simulation.progress.skipped", { count: skipped })}</p>
+      ) : null}
+      <ProgressBar current={published} total={total} />
+    </div>
+  );
+}
+
+function ProgressBar({ current, total }: { current: number; total: number }) {
+  if (total <= 0) {
+    return null;
+  }
+  const width = Math.max(0, Math.min(100, Math.round((current / total) * 100)));
+  return (
+    <div
+      className="h-1.5 w-40 overflow-hidden rounded-full bg-surface-subtle"
+      aria-hidden="true"
+    >
+      <div className="h-full bg-brand" style={{ width: `${width}%` }} />
+    </div>
   );
 }
 
@@ -375,22 +480,41 @@ function statusTone(status: SimulationStatus): string {
   }
 }
 
+function FieldFrame({
+  label,
+  help,
+  children,
+}: {
+  label: string;
+  help?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+      {children}
+      {help ? <span className="mt-1 block text-[11px] leading-4 text-muted">{help}</span> : null}
+    </label>
+  );
+}
+
 function NumberField({
   label,
+  help,
   value,
   onChange,
   min,
   max,
 }: {
   label: string;
+  help?: string;
   value: number;
   onChange: (value: number) => void;
   min?: number;
   max?: number;
 }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+    <FieldFrame label={label} help={help}>
       <input
         type="number"
         min={min}
@@ -399,38 +523,39 @@ function NumberField({
         onChange={(event) => onChange(Number(event.target.value))}
         className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand"
       />
-    </label>
+    </FieldFrame>
   );
 }
 
 function SelectField({
   label,
+  help,
   value,
   onChange,
   options,
   optionLabel,
 }: {
   label: string;
+  help?: string;
   value: string;
   onChange: (value: string) => void;
   options: readonly string[];
   optionLabel: (value: string) => string;
 }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+    <FieldFrame label={label} help={help}>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand"
       >
         {options.map((option) => (
-          <option key={option} value={option}>
+          <option key={option || "empty"} value={option}>
             {optionLabel(option)}
           </option>
         ))}
       </select>
-    </label>
+    </FieldFrame>
   );
 }
 
@@ -446,6 +571,7 @@ function BackgroundFields({
     <div className="grid gap-4 sm:grid-cols-2">
       <NumberField
         label={t("simulation.limit.label")}
+        help={t("simulation.limit.help")}
         value={values.limit}
         min={1}
         max={1_000_000}
@@ -453,6 +579,7 @@ function BackgroundFields({
       />
       <NumberField
         label={t("simulation.intervalMs.label")}
+        help={t("simulation.intervalMs.help")}
         value={values.intervalMs}
         min={0}
         onChange={(intervalMs) => onChange({ ...values, intervalMs })}
@@ -477,24 +604,29 @@ function SyntheticFields({
         options={scenarioOptions}
         optionLabel={(scenario) =>
           scenario === ""
-            ? "—"
+            ? t("common.emDash")
             : t(`simulation.scenario.${scenario}` as MessageKey)
         }
         onChange={(scenario) =>
-          onChange({ ...values, scenario: scenario as SyntheticSimulationRequest["scenario"] })
+          onChange({
+            ...values,
+            scenario: scenario as SyntheticSimulationRequest["scenario"],
+          })
         }
       />
       <SelectField
         label={t("simulation.site.label")}
+        help={t("simulation.site.help")}
         value={values.siteId ?? ""}
         options={siteOptions}
         optionLabel={(siteId) =>
-          siteId === ""
-            ? t("simulation.site.all")
-            : siteId
+          siteId === "" ? t("simulation.site.all") : siteId
         }
         onChange={(siteId) =>
-          onChange({ ...values, siteId: siteId as SyntheticSimulationRequest["siteId"] | undefined })
+          onChange({
+            ...values,
+            siteId: siteId as SyntheticSimulationRequest["siteId"] | undefined,
+          })
         }
       />
       <NumberField
@@ -506,6 +638,7 @@ function SyntheticFields({
       />
       <NumberField
         label={t("simulation.intervalMs.label")}
+        help={t("simulation.intervalMs.help")}
         value={values.intervalMs}
         min={0}
         onChange={(intervalMs) => onChange({ ...values, intervalMs })}
@@ -532,6 +665,7 @@ function MixedFields({
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <NumberField
         label={t("simulation.limit.label")}
+        help={t("simulation.limit.help")}
         value={values.realLimit}
         min={1}
         max={1_000_000}
@@ -543,7 +677,7 @@ function MixedFields({
         options={scenarioOptions}
         optionLabel={(scenario) =>
           scenario === ""
-            ? "—"
+            ? t("common.emDash")
             : t(`simulation.scenario.${scenario}` as MessageKey)
         }
         onChange={(burstScenario) =>
@@ -555,6 +689,7 @@ function MixedFields({
       />
       <SelectField
         label={t("simulation.site.label")}
+        help={t("simulation.site.help")}
         value={values.siteId ?? ""}
         options={siteOptions}
         optionLabel={(siteId) =>
@@ -569,6 +704,7 @@ function MixedFields({
       />
       <NumberField
         label={t("simulation.burstCount.label")}
+        help={t("simulation.burstCount.help")}
         value={values.burstCount}
         min={1}
         max={10_000}
@@ -576,6 +712,7 @@ function MixedFields({
       />
       <NumberField
         label={t("simulation.burstEvery.label")}
+        help={t("simulation.burstEvery.help")}
         value={values.burstEvery}
         min={1}
         max={1_000_000}
@@ -583,6 +720,7 @@ function MixedFields({
       />
       <NumberField
         label={t("simulation.intervalMs.label")}
+        help={t("simulation.intervalMs.help")}
         value={values.intervalMs}
         min={0}
         onChange={(intervalMs) => onChange({ ...values, intervalMs })}

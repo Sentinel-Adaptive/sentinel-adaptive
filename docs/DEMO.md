@@ -29,18 +29,23 @@ Confirm:
 
 ## Optional live simulation (instead of seed)
 
-The `/simulation` page can replay the Ovnicom challenge logs, inject labeled synthetic attack scenarios, or mix both. This is useful when you want to demonstrate live-stream classification against real DNS background traffic.
+The `/simulation` page can replay the Ovnicom challenge dataset, inject labeled synthetic attack scenarios, or mix both onto the same local Kafka topic. This exercises live-stream classification. It is not a mock and it is not customer production traffic.
 
-Suggested settings:
+In the UI, **Demo rápida** only prefills the controls. Press **Iniciar** afterwards.
 
-- Mode: **Mixed real + attack**
-- Real event limit: `10_000`
-- Burst scenario: `beacon`
+Suggested settings (same as Demo rápida):
+
+- Mode: **Dataset + synthetic attack** / **Dataset + ataque sintético**
+- Dataset event limit: `3000`
+- Burst scenario: `beacon` / Balizamiento C2
+- Site: `PTY-HEALTH-01`
 - Events per burst: `6`
-- Inject every: `1_000` real events
-- Publish interval: `0`
+- Inject every: `500` dataset events
+- Publish interval: `1` ms
 
-Then switch to `/` and watch incidents appear in real time. Incident ids will differ from the seeded ids below, so use the ids shown in the UI.
+Expected counters are about **3000** dataset, **36** synthetic, **6** bursts. Then switch to `/` and watch incidents appear in real time. Incident ids will differ from the seeded ids below, so use the ids shown in the UI.
+
+Point `OVNICOM_DATASET_PATH` at the local challenge `queries.*` files (or the nested `LogsDNSQueries` folder). Do not commit that path.
 
 Expected seed incidents (deterministic from the demo fixtures):
 

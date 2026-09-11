@@ -1,4 +1,5 @@
 import { processEvents } from "@sentinel-adaptive/detection";
+import { resolveConfiguredDatasetPath } from "./files.js";
 import {
   defaultKafkaBroker,
   defaultKafkaTopic,
@@ -19,11 +20,7 @@ const repoRoot = path.resolve(
 );
 
 function resolveDatasetPath(input?: string): string {
-  const trimmed = input?.trim() ?? "";
-  if (!trimmed) {
-    return path.resolve(repoRoot, "data/ovnicom/LogsDNSQueries");
-  }
-  return path.isAbsolute(trimmed) ? trimmed : path.resolve(repoRoot, trimmed);
+  return resolveConfiguredDatasetPath(input, repoRoot);
 }
 
 const broker = process.env.KAFKA_BROKER ?? defaultKafkaBroker;

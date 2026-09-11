@@ -2,6 +2,10 @@ import { Kafka, logLevel, type Consumer } from "kafkajs";
 
 import { dnsEventSchema, type Incident, type Signal } from "@sentinel-adaptive/contracts";
 import { DetectionEngine, IncidentCorrelator } from "@sentinel-adaptive/detection";
+import {
+  resolveKafkaBrokers,
+  resolveKafkaTopic,
+} from "@sentinel-adaptive/generator";
 
 import {
   ensureTelemetrySchema,
@@ -15,8 +19,7 @@ import { assessAmbiguousSignals } from "./qvac.js";
 import { operatorStore, type OperatorStore } from "./store.js";
 import { emitWazuhIncidents } from "./wazuh.js";
 
-export const defaultKafkaBroker = "localhost:9092";
-export const defaultKafkaTopic = "dns.telemetry";
+export { defaultKafkaBroker, defaultKafkaTopic } from "@sentinel-adaptive/generator";
 
 export interface ConsumeStreamOptions {
   readonly broker?: string;
@@ -35,23 +38,21 @@ export interface ConsumeStreamOptions {
 export async function consumeDnsStream(
   options: ConsumeStreamOptions = {},
 ): Promise<Consumer> {
-  const broker = options.broker ?? process.env.KAFKA_BROKER ?? defaultKafkaBroker;
-  const topic = options.topic ?? process.env.KAFKA_TOPIC ?? defaultKafkaTopic;
+  const topic = options.topic ?? resolveKafkaTopic();
   const persist = options.persist ?? true;
   const emitWazuh = options.emitWazuh ?? true;
   const assessQvac = options.assessQvac ?? true;
   const store = options.store ?? operatorStore;
   const kafka = new Kafka({
     clientId: "sentinel-agent",
-    brokers: [broker],
+    brokers: options.broker ? [options.broker] : resolveKafkaBrokers(),
     logLevel: logLevel.NOTHING,
+    connectionTimeout: 10_000,
+    requestTimeout: 30_000,
   });
   const consumer = kafka.consumer({
     groupId: options.groupId ?? "sentinel-agent",
   });
-  if (persist) {
-    await ensureTelemetrySchema(options.clickhouse);
-  }
   const engine = new DetectionEngine({
     onBucketComplete(metrics, events, qoe) {
       if (!persist) {
@@ -75,26 +76,46 @@ export async function consumeDnsStream(
     topic,
     fromBeginning: options.fromBeginning ?? false,
   });
-  await consumer.run({
-    eachMessage: async ({ message }) => {
-      if (!message.value) {
-        return;
-      }
-      const parsed = dnsEventSchema.safeParse(
-        JSON.parse(message.value.toString()),
+  console.log(`Kafka consumer subscribed to ${topic}`);
+  if (persist) {
+    void ensureTelemetrySchema(options.clickhouse).catch((error: unknown) => {
+      console.error(
+        "ClickHouse schema ensure failed:",
+        error instanceof Error ? error.message : error,
       );
-      if (!parsed.success) {
-        return;
-      }
-      engine.ingest(parsed.data);
-      const signals = engine.evaluate().filter((signal) => {
-        if (seen.has(signal.signalId)) {
-          return false;
+    });
+  }
+  let loggedFirst = false;
+  await consumer.run({
+    eachMessage: async ({ message, heartbeat }) => {
+      try {
+        await heartbeat();
+        if (!loggedFirst) {
+          loggedFirst = true;
+          console.log(
+            `Kafka consumer first message offset=${message.offset ?? "unknown"}`,
+          );
         }
-        seen.add(signal.signalId);
-        return true;
-      });
-      if (signals.length > 0) {
+        if (!message.value) {
+          return;
+        }
+        const parsed = dnsEventSchema.safeParse(
+          JSON.parse(message.value.toString()),
+        );
+        if (!parsed.success) {
+          return;
+        }
+        engine.ingest(parsed.data);
+        const signals = engine.evaluate().filter((signal) => {
+          if (seen.has(signal.signalId)) {
+            return false;
+          }
+          seen.add(signal.signalId);
+          return true;
+        });
+        if (signals.length === 0) {
+          return;
+        }
         options.onSignals?.(signals);
         const incidents = correlator.ingest(signals);
         if (incidents.length > 0) {
@@ -163,6 +184,11 @@ export async function consumeDnsStream(
               );
             });
         }
+      } catch (error) {
+        console.error(
+          "Kafka message failed:",
+          error instanceof Error ? error.message : error,
+        );
       }
     },
   });

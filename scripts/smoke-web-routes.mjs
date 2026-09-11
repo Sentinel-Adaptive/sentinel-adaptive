@@ -12,6 +12,7 @@ const routes = [
   "/incidents/INC-0000000000000000",
   "/sites/PTY-BANK-01",
   "/system",
+  "/simulation",
 ];
 
 const preview = spawn(

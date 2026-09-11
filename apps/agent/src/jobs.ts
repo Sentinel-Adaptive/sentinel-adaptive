@@ -3,16 +3,28 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { datasetStatsSchema, type BackgroundSimulationRequest, type DatasetStats, type MixedSimulationRequest, type SimulationJob, type SimulationMode, type SimulationStatus, type SyntheticSimulationRequest } from "@sentinel-adaptive/contracts";
 import {
+  datasetStatsSchema,
+  type BackgroundSimulationRequest,
+  type DatasetStats,
+  type DnsEvent,
+  type MixedSimulationRequest,
+  type SimulationJob,
+  type SimulationMode,
+  type SimulationStatus,
+  type SiteId,
+  type SyntheticSimulationRequest,
+} from "@sentinel-adaptive/contracts";
+import {
+  createDnsPublisher,
   generateScenario,
-  publishDnsEvents,
-  type PublishOptions,
+  type DnsPublisher,
 } from "@sentinel-adaptive/generator";
 import {
-  computeDatasetStats,
+  DatasetLookupError,
+  discoverQueryFiles,
   replayOvnicomLogs,
-  type ReplayOptions,
+  resolveConfiguredDatasetPath,
 } from "@sentinel-adaptive/ovnicom-replay";
 
 import { operatorStore } from "./store.js";
@@ -24,7 +36,30 @@ const repoRoot = path.resolve(
   "..",
 );
 
-const DEFAULT_DATASET_PATH = "data/ovnicom/LogsDNSQueries";
+export const simulationErrorCodes = [
+  "dataset_not_found",
+  "queries_not_found",
+  "kafka_unavailable",
+  "generator_failed",
+  "cancelled",
+  "job_failed",
+] as const;
+
+export type SimulationErrorCode = (typeof simulationErrorCodes)[number];
+
+class JobCancelledError extends Error {
+  constructor() {
+    super("cancelled");
+    this.name = "JobCancelledError";
+  }
+}
+
+interface JobUpdate {
+  status?: SimulationStatus;
+  progress?: Record<string, unknown>;
+  error?: string;
+  finishedAt?: string;
+}
 
 function readStatsCache(datasetPath: string): DatasetStats | undefined {
   const resolved = path.resolve(datasetPath);
@@ -41,19 +76,65 @@ function readStatsCache(datasetPath: string): DatasetStats | undefined {
   }
 }
 
-function resolveDatasetPath(input?: string): string {
-  const trimmed = input?.trim() ?? "";
-  if (!trimmed) {
-    return path.resolve(repoRoot, DEFAULT_DATASET_PATH);
-  }
-  return path.isAbsolute(trimmed) ? trimmed : path.resolve(repoRoot, trimmed);
+export function resolveSimulationDatasetPath(input?: string): string {
+  return resolveConfiguredDatasetPath(input, repoRoot);
 }
 
-interface JobUpdate {
-  status?: SimulationStatus;
-  progress?: Record<string, unknown>;
-  error?: string;
-  finishedAt?: string;
+export function classifySimulationError(error: unknown): SimulationErrorCode {
+  if (error instanceof JobCancelledError) {
+    return "cancelled";
+  }
+  if (error instanceof DatasetLookupError) {
+    return error.code;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  const name = error instanceof Error ? error.name : "";
+  const code =
+    error !== null && typeof error === "object" && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : "";
+  const combined = `${name} ${code} ${message}`.toLowerCase();
+
+  if (
+    code === "ENOENT" ||
+    combined.includes("enoent") ||
+    combined.includes("dataset_not_found")
+  ) {
+    return "dataset_not_found";
+  }
+  if (
+    combined.includes("queries_not_found") ||
+    combined.includes("no query files") ||
+    combined.includes("queries.*")
+  ) {
+    return "queries_not_found";
+  }
+  if (
+    combined.includes("kafka") ||
+    combined.includes("broker") ||
+    combined.includes("econnrefused") ||
+    combined.includes("enotfound") ||
+    combined.includes("connection timeout") ||
+    combined.includes("request timed out") ||
+    combined.includes("network")
+  ) {
+    return "kafka_unavailable";
+  }
+  if (
+    combined.includes("generate") ||
+    combined.includes("scenario") ||
+    combined.includes("publish interval")
+  ) {
+    return "generator_failed";
+  }
+  return "job_failed";
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 class JobManager {
@@ -77,7 +158,11 @@ class JobManager {
     if (!job || job.status === "completed" || job.status === "failed") {
       return job;
     }
-    return this.update(id, { status: "cancelled", finishedAt: new Date().toISOString() });
+    return this.update(id, {
+      status: "cancelled",
+      error: "cancelled",
+      finishedAt: new Date().toISOString(),
+    });
   }
 
   private create(mode: SimulationMode, params: Record<string, unknown>): SimulationJob {
@@ -99,6 +184,13 @@ class JobManager {
     if (!job) {
       throw new Error(`Job ${id} not found`);
     }
+    if (
+      (job.status === "cancelled" || job.status === "failed" || job.status === "completed") &&
+      changes.status !== undefined &&
+      changes.status !== job.status
+    ) {
+      return job;
+    }
     const next: SimulationJob = {
       ...job,
       ...changes,
@@ -111,6 +203,12 @@ class JobManager {
 
   private emit(job: SimulationJob): void {
     operatorStore.recordJob(job);
+  }
+
+  private assertActive(id: string): void {
+    if (this.get(id)?.status === "cancelled") {
+      throw new JobCancelledError();
+    }
   }
 
   private async acquire(): Promise<void> {
@@ -128,7 +226,7 @@ class JobManager {
     request: BackgroundSimulationRequest,
   ): Promise<SimulationJob> {
     const job = this.create("background", request as Record<string, unknown>);
-    this.runBackground(job.id, request);
+    void this.runBackground(job.id, request);
     return job;
   }
 
@@ -136,13 +234,13 @@ class JobManager {
     request: SyntheticSimulationRequest,
   ): Promise<SimulationJob> {
     const job = this.create("synthetic", request as Record<string, unknown>);
-    this.runSynthetic(job.id, request);
+    void this.runSynthetic(job.id, request);
     return job;
   }
 
   async startMixed(request: MixedSimulationRequest): Promise<SimulationJob> {
     const job = this.create("mixed", request as Record<string, unknown>);
-    this.runMixed(job.id, request);
+    void this.runMixed(job.id, request);
     return job;
   }
 
@@ -151,22 +249,50 @@ class JobManager {
     request: BackgroundSimulationRequest,
   ): Promise<void> {
     await this.acquire();
-    const datasetPath = resolveDatasetPath(request.path);
-    this.update(id, { status: "running", progress: { stage: "publishing" } });
+    let publisher: DnsPublisher | undefined;
     try {
+      this.assertActive(id);
+      const datasetPath = resolveSimulationDatasetPath(request.path);
+      const files = discoverQueryFiles(datasetPath);
+      if (files.length === 0) {
+        throw new DatasetLookupError("queries_not_found");
+      }
+      this.update(id, {
+        status: "running",
+        progress: {
+          stage: "publishing",
+          published: 0,
+          skipped: 0,
+          limit: request.limit,
+          files: files.length,
+        },
+      });
+      publisher = await createDnsPublisher({ intervalMs: request.intervalMs });
+      this.assertActive(id);
       const stats = await replayOvnicomLogs({
         path: datasetPath,
         limit: request.limit,
         intervalMs: request.intervalMs,
+        publish: async (events) => {
+          this.assertActive(id);
+          await publisher?.publish(events, request.intervalMs);
+        },
       });
+      this.assertActive(id);
       this.update(id, {
         status: "completed",
-        progress: { ...stats, stage: "completed" },
+        progress: {
+          ...stats,
+          stage: "completed",
+          limit: request.limit,
+          datasetPublished: stats.published,
+        },
         finishedAt: new Date().toISOString(),
       });
     } catch (error) {
       this.fail(id, error);
     } finally {
+      await publisher?.close().catch(() => undefined);
       this.release();
     }
   }
@@ -176,22 +302,30 @@ class JobManager {
     request: SyntheticSimulationRequest,
   ): Promise<void> {
     await this.acquire();
-    this.update(id, {
-      status: "running",
-      progress: { stage: "generating", generated: 0, published: 0 },
-    });
+    let publisher: DnsPublisher | undefined;
     try {
-      const options = {
+      this.assertActive(id);
+      this.update(id, {
+        status: "running",
+        progress: { stage: "generating", generated: 0, published: 0 },
+      });
+      const events = generateScenario({
         scenario: request.scenario,
         count: request.count,
         siteId: request.siteId,
         seed: request.seed,
-      };
-      const events = generateScenario(options);
-      this.update(id, {
-        progress: { stage: "publishing", generated: events.length },
       });
-      await publishDnsEvents(events, { intervalMs: request.intervalMs });
+      this.update(id, {
+        progress: {
+          stage: "publishing",
+          generated: events.length,
+          published: 0,
+        },
+      });
+      publisher = await createDnsPublisher({ intervalMs: request.intervalMs });
+      this.assertActive(id);
+      await publisher.publish(events, request.intervalMs);
+      this.assertActive(id);
       this.update(id, {
         status: "completed",
         progress: {
@@ -204,6 +338,7 @@ class JobManager {
     } catch (error) {
       this.fail(id, error);
     } finally {
+      await publisher?.close().catch(() => undefined);
       this.release();
     }
   }
@@ -213,117 +348,155 @@ class JobManager {
     request: MixedSimulationRequest,
   ): Promise<void> {
     await this.acquire();
-    const datasetPath = resolveDatasetPath(request.path);
-    const {
-      burstScenario,
-      burstCount,
-      burstEvery,
-      intervalMs,
-    } = request;
-
-    let realPublished = 0;
-    let syntheticPublished = 0;
-    let burstsInjected = 0;
-    let nextInjectAt = burstEvery;
-
-    this.update(id, {
-      status: "running",
-      progress: {
-        stage: "publishing",
-        realPublished: 0,
-        burstsInjected: 0,
-        syntheticPublished: 0,
-      },
-    });
-
-    const publishMixed = async (
-      events: readonly import("@sentinel-adaptive/contracts").DnsEvent[],
-      options: PublishOptions,
-    ): Promise<void> => {
-      realPublished += events.length;
-
-      const injected: import("@sentinel-adaptive/contracts").DnsEvent[] = [];
-      while (realPublished >= nextInjectAt) {
-        const siteId =
-          events[0]?.siteId ??
-          (request.siteId as import("@sentinel-adaptive/contracts").SiteId | undefined) ??
-          "PTY-BANK-01";
-        const burst = generateScenario({
-          scenario: burstScenario,
-          count: burstCount,
-          siteId,
-          startTime: new Date().toISOString(),
-        });
-        injected.push(...burst);
-        burstsInjected += 1;
-        syntheticPublished += burst.length;
-        nextInjectAt += burstEvery;
+    let publisher: DnsPublisher | undefined;
+    try {
+      this.assertActive(id);
+      const datasetPath = resolveSimulationDatasetPath(request.path);
+      const files = discoverQueryFiles(datasetPath);
+      if (files.length === 0) {
+        throw new DatasetLookupError("queries_not_found");
       }
 
-      const combined = injected.length > 0 ? [...events, ...injected] : events;
-      await publishDnsEvents(combined, options);
+      const {
+        burstScenario,
+        burstCount,
+        burstEvery,
+        intervalMs,
+      } = request;
+      const burstSiteId: SiteId = request.siteId ?? "PTY-HEALTH-01";
 
-      this.update(id, {
-        progress: {
-          stage: "publishing",
-          realPublished,
-          burstsInjected,
-          syntheticPublished,
-        },
+      let datasetPublished = 0;
+      let syntheticPublished = 0;
+      let burstsInjected = 0;
+      let skipped = 0;
+      let nextInjectAt = burstEvery;
+
+      const snapshot = (): Record<string, unknown> => ({
+        stage: "publishing",
+        limit: request.realLimit,
+        files: files.length,
+        published: datasetPublished,
+        skipped,
+        datasetPublished,
+        realPublished: datasetPublished,
+        syntheticPublished,
+        burstsInjected,
       });
-    };
 
-    try {
+      this.update(id, { status: "running", progress: snapshot() });
+      publisher = await createDnsPublisher({ intervalMs });
+      this.assertActive(id);
+
+      const publishMixed = async (events: readonly DnsEvent[]): Promise<void> => {
+        this.assertActive(id);
+        datasetPublished += events.length;
+
+        const injected: DnsEvent[] = [];
+        while (datasetPublished >= nextInjectAt) {
+          const burst = generateScenario({
+            scenario: burstScenario,
+            count: burstCount,
+            siteId: burstSiteId,
+            startTime: new Date().toISOString(),
+          });
+          injected.push(...burst);
+          burstsInjected += 1;
+          syntheticPublished += burst.length;
+          nextInjectAt += burstEvery;
+        }
+
+        this.update(id, { progress: snapshot() });
+        const combined = injected.length > 0 ? [...events, ...injected] : events;
+        await publisher?.publish(combined, intervalMs);
+        this.update(id, { progress: snapshot() });
+      };
+
       const stats = await replayOvnicomLogs({
         path: datasetPath,
         limit: request.realLimit,
         intervalMs,
         publish: publishMixed,
-      } as ReplayOptions);
+      });
+      skipped = stats.skipped;
+      this.assertActive(id);
       this.update(id, {
         status: "completed",
         progress: {
           ...stats,
+          ...snapshot(),
           stage: "completed",
-          realPublished,
-          burstsInjected,
-          syntheticPublished,
+          skipped: stats.skipped,
         },
         finishedAt: new Date().toISOString(),
       });
     } catch (error) {
       this.fail(id, error);
     } finally {
+      await publisher?.close().catch(() => undefined);
       this.release();
     }
   }
 
   private fail(id: string, error: unknown): void {
+    const job = this.get(id);
+    if (!job || job.status === "cancelled" || job.status === "completed") {
+      return;
+    }
+    const code = classifySimulationError(error);
+    if (code === "cancelled") {
+      this.update(id, {
+        status: "cancelled",
+        error: code,
+        finishedAt: new Date().toISOString(),
+      });
+      return;
+    }
+    console.error(`Simulation job ${id} failed (${code}):`, error);
     this.update(id, {
       status: "failed",
-      error: error instanceof Error ? error.message : String(error),
+      error: code,
+      progress: {
+        ...job.progress,
+        errorCode: code,
+      },
       finishedAt: new Date().toISOString(),
     });
   }
 
   async getDatasetStats(pathOverride?: string): Promise<DatasetStats | null> {
-    const datasetPath = resolveDatasetPath(pathOverride);
-    const cached = readStatsCache(datasetPath);
-    if (cached) {
-      return cached;
-    }
     try {
-      return await computeDatasetStats(datasetPath);
+      const datasetPath = resolveSimulationDatasetPath(pathOverride);
+      const cached = readStatsCache(datasetPath);
+      if (cached) {
+        return cached;
+      }
+      const files = discoverQueryFiles(datasetPath);
+      if (files.length === 0) {
+        return null;
+      }
+      return {
+        path: datasetPath,
+        generatedAt: new Date().toISOString(),
+        files: files.length,
+        linesRead: 0,
+        parsed: 0,
+        skipped: 0,
+        uniqueClients: 0,
+        uniqueQnames: 0,
+        topQnames: [],
+        topClients: [],
+        qtypeCounts: {},
+        fileStats: files.map((file) => ({
+          file: path.basename(file),
+          lines: 0,
+          parsed: 0,
+          skipped: 0,
+        })),
+      };
     } catch {
       return null;
     }
   }
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
 }
 
 export const simulationJobs = new JobManager();

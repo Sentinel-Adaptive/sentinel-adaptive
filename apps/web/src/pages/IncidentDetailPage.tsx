@@ -12,6 +12,10 @@ import {
 } from "../format.js";
 import { translateKnown, useI18n, type Translate } from "../i18n.js";
 import {
+  translateEvidenceReason,
+  translateIncidentSummary,
+} from "../operator-copy.js";
+import {
   EmptyState,
   ErrorBanner,
   Fact,
@@ -63,7 +67,9 @@ function IncidentBody({
             {translateKnown(t, "enum", incident.classification)}
           </span>
         </div>
-        <p className="mt-3 text-sm leading-6 text-muted">{incident.summary}</p>
+        <p className="mt-3 text-sm leading-6 text-muted">
+          {translateIncidentSummary(t, incident.summary)}
+        </p>
         <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 text-sm lg:grid-cols-3">
           <Fact label={t("common.site")}>
             <Link
@@ -173,7 +179,9 @@ function IncidentBody({
                             : t("common.no")
                           : formatEvidenceValue(item.metric, item.value)}
                       </span>
-                      <span className="text-muted">{item.reason}</span>
+                      <span className="text-muted">
+                        {translateEvidenceReason(t, item.reason)}
+                      </span>
                     </li>
                   ))}
                 </ul>

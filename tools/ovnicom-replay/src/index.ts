@@ -1,5 +1,12 @@
 export { siteIdForClientIp, toReplayEvent, enrichedFieldNames } from "./enrich.js";
-export { discoverQueryFiles } from "./files.js";
+export {
+  DEFAULT_DATASET_RELATIVE_PATH,
+  DatasetLookupError,
+  discoverQueryFiles,
+  resolveConfiguredDatasetPath,
+  resolveExistingDatasetRoot,
+  type DatasetLookupCode,
+} from "./files.js";
 export {
   bindTimestampToIsoUtc,
   normalizeQtype,

@@ -81,7 +81,7 @@ export async function replayOvnicomLogs(
     batch.push(event);
     published += 1;
 
-    if (batch.length >= 500 || (options.intervalMs ?? 0) > 0) {
+    if (batch.length >= 500) {
       await flushBatch(batch, options);
     }
 

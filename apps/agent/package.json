@@ -22,6 +22,7 @@
     "@sentinel-adaptive/contracts": "0.0.0",
     "@sentinel-adaptive/detection": "0.0.0",
     "@sentinel-adaptive/generator": "0.0.0",
+    "@sentinel-adaptive/ovnicom-replay": "0.0.0",
     "kafkajs": "2.2.4"
   }
 }

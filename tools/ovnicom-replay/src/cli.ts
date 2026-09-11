@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { DatasetLookupError, resolveConfiguredDatasetPath } from "./files.js";
 import { defaultReplayLimit, replayOvnicomLogs } from "./replay.js";
 import {
   computeDatasetStats,
@@ -16,11 +17,10 @@ const repoRoot = path.resolve(
 );
 
 function resolveDatasetPath(input: string): string {
-  const trimmed = input.trim();
-  if (path.isAbsolute(trimmed)) {
-    return trimmed;
+  if (input.trim().length === 0) {
+    throw new Error("Dataset path is required via --path or OVNICOM_DATASET_PATH.");
   }
-  return path.resolve(repoRoot, trimmed);
+  return resolveConfiguredDatasetPath(input, repoRoot);
 }
 
 const usage = `Usage: npm run ovnicom:replay -- [options]
@@ -46,9 +46,7 @@ function parseInteger(value: string | undefined, option: string): number {
 }
 
 function defaultDatasetPath(): string {
-  return resolveDatasetPath(
-    process.env.OVNICOM_DATASET_PATH ?? "data/ovnicom/LogsDNSQueries",
-  );
+  return resolveConfiguredDatasetPath(undefined, repoRoot);
 }
 
 function defaultCachePath(datasetPath: string): string {
@@ -158,6 +156,14 @@ try {
     }
   }
 } catch (error) {
-  console.error(error instanceof Error ? error.message : error);
+  if (error instanceof DatasetLookupError) {
+    console.error(
+      error.code === "queries_not_found"
+        ? "No queries.* files were found in the configured dataset."
+        : "The configured dataset was not found.",
+    );
+  } else {
+    console.error(error instanceof Error ? error.message : error);
+  }
   process.exitCode = 1;
 }
